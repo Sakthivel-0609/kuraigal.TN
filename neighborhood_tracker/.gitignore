@@ -1,0 +1,36 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# --- Virtual environment ---
+venv/
+env/
+ENV/
+.venv/
+
+# --- Django ---
+db.sqlite3
+db.sqlite3-journal
+*.log
+staticfiles/
+media/*
+!media/.gitkeep
+
+# --- Environment variables / secrets (NEVER commit these) ---
+.env
+.env.local
+
+# --- IDE / editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Distribution / build ---
+build/
+dist/
+*.egg-info/

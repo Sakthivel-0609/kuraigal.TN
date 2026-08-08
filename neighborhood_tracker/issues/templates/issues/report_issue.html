@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Report Issue" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-flag-fill"></i>{% trans "Report a New Issue" %}</h2>
+        <p>{% trans "Click on the map (or use your location) to mark the exact spot, then fill in the details." %}</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <p class="small text-muted mb-3"><i class="bi bi-cloud-check me-1"></i>{% trans "Your progress is saved automatically in this browser as you type." %}</p>
+            <form method="post" enctype="multipart/form-data" id="issue-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Title" %}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0">{% trans "Description" %}</label>
+                                <button type="button" id="voice-input-btn" class="btn btn-sm btn-outline-secondary d-none" title="{% trans 'Speak your description' %}">
+                                    <i class="bi bi-mic-fill"></i> <span id="voice-btn-label">{% trans "Voice Input" %}</span>
+                                </button>
+                            </div>
+                            {{ form.description }}
+                            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors|striptags }}</div>{% endif %}
+                            <p class="small text-muted mb-0 mt-1 d-none" id="voice-hint"><i class="bi bi-info-circle me-1"></i>{% trans "Listening... speak now. Click again to stop; you can edit the text before submitting." %}</p>
+                        </div>
+
+                        <!-- AI Category + Priority suggestion -->
+                        <div id="ai-suggest-box" class="mb-3 d-none">
+                            <div class="p-3 rounded-3" style="background: var(--gov-green-light); border: 1px solid var(--gov-green);">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="bi bi-robot fs-5" style="color: var(--gov-green);"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold mb-1">{% trans "AI Suggestion" %}</div>
+                                        <div id="ai-suggest-text" class="small mb-2"></div>
+                                        <button type="button" id="ai-apply-btn" class="btn btn-sm btn-outline-secondary d-none">
+                                            <i class="bi bi-check2 me-1"></i>{% trans "Apply Suggestion" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Category" %}</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Address / Landmark" %}</label>
+                            {{ form.address }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Ward (optional)" %}</label>
+                            {{ form.ward }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold"><i class="bi bi-envelope me-1"></i>{% trans "Your Email (optional)" %}</label>
+                            {{ form.reporter_email }}
+                            {% if form.reporter_email.errors %}<div class="text-danger small mt-1">{{ form.reporter_email.errors|striptags }}</div>{% endif %}
+                            <div class="form-text">{% trans "We'll email you a copy of this complaint (as PDF) and a confirmation." %}</div>
+                        </div>
+                        <div class="mb-3 form-check form-switch ps-0">
+                            <div class="d-flex align-items-center gap-2">
+                                {{ form.is_anonymous }}
+                                <label class="form-check-label" for="id_is_anonymous">🕶️ {% trans "Report anonymously (your name stays hidden from public view)" %}</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Photo (optional)" %}</label>
+                            {{ form.image }}
+                            {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3 form-check form-switch ps-0">
+                            <div class="d-flex align-items-center gap-2">
+                                {{ form.is_emergency }}
+                                <label class="form-check-label" for="id_is_emergency">🚨 {% trans "This is dangerous / needs urgent attention" %}</label>
+                            </div>
+                        </div>
+
+                        <div id="emergency-type-box" class="mb-3 {% if not form.is_emergency.value %}d-none{% endif %}">
+                            <div class="p-3 rounded-3" style="background: #fdeaea; border: 1px solid var(--gov-emergency);">
+                                <label class="form-label fw-semibold small">{% trans "Type of Emergency" %}</label>
+                                {{ form.emergency_type }}
+                                {% if form.emergency_type.errors %}<div class="text-danger small mt-1">{{ form.emergency_type.errors|striptags }}</div>{% endif %}
+                                <p class="small text-danger mb-0 mt-2"><i class="bi bi-telephone-fill me-1"></i>{% trans "Life-threatening? Call 108 (Ambulance), 101 (Fire) or 100 (Police) immediately - don't wait for this report." %}</p>
+                            </div>
+                        </div>
+
+                        {{ form.latitude }}
+                        {{ form.longitude }}
+                        <p class="small {% if form.latitude.errors or form.longitude.errors %}text-danger fw-semibold{% else %}text-muted{% endif %}" id="coord-display">
+                            <i class="bi bi-pin-map me-1"></i>
+                            {% if form.latitude.errors or form.longitude.errors %}
+                                {% trans "Please click on the map or use 'Use My Location' to select a location." %}
+                            {% else %}
+                                {% trans "No location selected yet." %}
+                            {% endif %}
+                        </p>
+
+                        <!-- AI Duplicate Detection warning -->
+                        <div id="duplicate-warning" class="mb-3 d-none">
+                            <strong><i class="bi bi-exclamation-triangle-fill me-1"></i>{% trans "Possible duplicate complaints nearby" %}</strong>
+                            <p class="small mb-2 mt-1">{% trans "Someone may have already reported this. Consider upvoting instead of creating a duplicate:" %}</p>
+                            <ul id="duplicate-list" class="small mb-0"></ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-gov-primary px-4"><i class="bi bi-send-fill me-1"></i>{% trans "Submit Issue" %}</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-semibold mb-0">{% trans "Pick Location on Map" %}</label>
+                            <button type="button" id="use-location-btn" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-broadcast me-1"></i>{% trans "Use My Location" %}
+                            </button>
+                        </div>
+                        <div id="report-map"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Default center - change to your city's coordinates
+    var defaultLat = 13.0827, defaultLng = 80.2707;
+    var map = L.map('report-map').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker;
+    var categorySelect = document.getElementById('id_category');
+    var dupWarning = document.getElementById('duplicate-warning');
+    var dupList = document.getElementById('duplicate-list');
+
+    function setLocation(lat, lng) {
+        document.getElementById('id_latitude').value = lat;
+        document.getElementById('id_longitude').value = lng;
+        document.getElementById('coord-display').innerHTML =
+            '<i class="bi bi-pin-map-fill me-1"></i>{% trans "Selected" %}: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng]).addTo(map);
+        }
+        checkDuplicates(lat, lng);
+    }
+
+    function checkDuplicates(lat, lng) {
+        var categoryId = categorySelect.value;
+        var url = "{% url 'check_duplicate' %}?lat=" + lat + "&lng=" + lng + (categoryId ? "&category=" + categoryId : "");
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.duplicates && data.duplicates.length > 0) {
+                    dupList.innerHTML = '';
+                    data.duplicates.forEach(function(d) {
+                        var li = document.createElement('li');
+                        li.innerHTML = '<a href="' + d.url + '" target="_blank">' + d.title + '</a> — ' +
+                            d.distance + 'm away, ' + d.votes + ' upvote(s), status: ' + d.status;
+                        dupList.appendChild(li);
+                    });
+                    dupWarning.classList.remove('d-none');
+                } else {
+                    dupWarning.classList.add('d-none');
+                }
+            });
+    }
+
+    map.on('click', function(e) {
+        setLocation(e.latlng.lat, e.latlng.lng);
+    });
+
+    categorySelect.addEventListener('change', function() {
+        var lat = document.getElementById('id_latitude').value;
+        var lng = document.getElementById('id_longitude').value;
+        if (lat && lng) {
+            checkDuplicates(lat, lng);
+        }
+    });
+
+    function locateMe() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                setLocation(pos.coords.latitude, pos.coords.longitude);
+            }, function() {
+                if (window.govToast) {
+                    window.govToast("{% trans 'Could not get your location. Please allow location access.' %}", "danger");
+                }
+            });
+        }
+    }
+
+    // Try to use browser geolocation to center map on user (does not auto-select a point)
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+        });
+    }
+
+    document.getElementById('use-location-btn').addEventListener('click', locateMe);
+
+    // ---------- AI Category + Priority suggestion (debounced, as-you-type) ----------
+    var titleInput = document.getElementById('id_title');
+    var descInput = document.getElementById('id_description');
+    var aiBox = document.getElementById('ai-suggest-box');
+    var aiText = document.getElementById('ai-suggest-text');
+    var aiApplyBtn = document.getElementById('ai-apply-btn');
+    var aiDebounce;
+    var lastSuggestedCategoryId = null;
+
+    var priorityBadgeColors = {
+        emergency: 'text-bg-danger', high: 'text-bg-warning', medium: 'text-bg-secondary', low: 'text-bg-success'
+    };
+
+    function runAiSuggest() {
+        var title = titleInput.value.trim();
+        var description = descInput.value.trim();
+        if ((title + description).length < 8) {
+            aiBox.classList.add('d-none');
+            return;
+        }
+        var url = "{% url 'ai_suggest' %}?title=" + encodeURIComponent(title) + "&description=" + encodeURIComponent(description);
+        fetch(url)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var parts = [];
+                if (data.category_name) {
+                    parts.push('{% trans "Category" %}: <strong>' + data.category_icon + ' ' + data.category_name + '</strong>');
+                    lastSuggestedCategoryId = data.category_id;
+                    aiApplyBtn.classList.remove('d-none');
+                } else {
+                    lastSuggestedCategoryId = null;
+                    aiApplyBtn.classList.add('d-none');
+                }
+                var badgeClass = priorityBadgeColors[data.priority] || 'text-bg-secondary';
+                parts.push('{% trans "Priority" %}: <span class="badge ' + badgeClass + '">' + data.priority_label + '</span>');
+                aiText.innerHTML = parts.join(' &nbsp;·&nbsp; ');
+                aiBox.classList.remove('d-none');
+            });
+    }
+
+    [titleInput, descInput].forEach(function(el) {
+        el.addEventListener('input', function() {
+            clearTimeout(aiDebounce);
+            aiDebounce = setTimeout(runAiSuggest, 500);
+        });
+    });
+
+    aiApplyBtn.addEventListener('click', function() {
+        if (lastSuggestedCategoryId) {
+            categorySelect.value = lastSuggestedCategoryId;
+            if (window.govToast) { window.govToast("{% trans 'Category applied' %}", "success"); }
+        }
+    });
+
+    // ---------- Voice Reporting / Speech-to-Text ----------
+    (function () {
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var voiceBtn = document.getElementById('voice-input-btn');
+        var voiceHint = document.getElementById('voice-hint');
+        var voiceLabel = document.getElementById('voice-btn-label');
+        var descField = document.getElementById('id_description');
+
+        if (!SpeechRecognition || !voiceBtn) return; // graceful no-op on unsupported browsers
+        voiceBtn.classList.remove('d-none'); // only show the button if the browser supports it
+
+        var recognition = new SpeechRecognition();
+        recognition.lang = 'en-IN';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        var listening = false;
+        var baseText = '';
+
+        recognition.addEventListener('result', function (e) {
+            var transcript = '';
+            for (var i = e.resultIndex; i < e.results.length; i++) {
+                transcript += e.results[i][0].transcript;
+            }
+            descField.value = (baseText + ' ' + transcript).trim();
+        });
+
+        recognition.addEventListener('end', function () {
+            listening = false;
+            voiceBtn.classList.remove('btn-danger');
+            voiceBtn.classList.add('btn-outline-secondary');
+            voiceLabel.textContent = "{% trans 'Voice Input' %}";
+            voiceHint.classList.add('d-none');
+        });
+
+        recognition.addEventListener('error', function () {
+            listening = false;
+            voiceBtn.classList.remove('btn-danger');
+            voiceBtn.classList.add('btn-outline-secondary');
+            voiceLabel.textContent = "{% trans 'Voice Input' %}";
+            voiceHint.classList.add('d-none');
+            if (window.govToast) {
+                window.govToast("{% trans 'Voice input failed. Please check microphone permissions.' %}", "danger");
+            }
+        });
+
+        voiceBtn.addEventListener('click', function () {
+            if (listening) {
+                recognition.stop();
+                return;
+            }
+            baseText = descField.value;
+            listening = true;
+            voiceBtn.classList.remove('btn-outline-secondary');
+            voiceBtn.classList.add('btn-danger');
+            voiceLabel.textContent = "{% trans 'Stop' %}";
+            voiceHint.classList.remove('d-none');
+            try {
+                recognition.start();
+            } catch (err) {
+                listening = false;
+            }
+        });
+    })();
+
+    // ---------- Emergency type box toggle ----------
+    var emergencyCheckbox = document.getElementById('id_is_emergency');
+    var emergencyTypeBox = document.getElementById('emergency-type-box');
+    emergencyCheckbox.addEventListener('change', function() {
+        emergencyTypeBox.classList.toggle('d-none', !this.checked);
+    });
+
+    // ---------- Prevent submit without a selected location ----------
+    document.getElementById('issue-form').addEventListener('submit', function(e) {
+        var lat = document.getElementById('id_latitude').value;
+        var lng = document.getElementById('id_longitude').value;
+        if (!lat || !lng) {
+            e.preventDefault();
+            var coordDisplay = document.getElementById('coord-display');
+            coordDisplay.classList.add('text-danger', 'fw-semibold');
+            coordDisplay.classList.remove('text-muted');
+            coordDisplay.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>{% trans "Please click on the map or use Use My Location before submitting." %}';
+            document.getElementById('report-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (window.govToast) {
+                window.govToast("{% trans 'Please select a location on the map first.' %}", "danger");
+            }
+        } else {
+            // Successful submit - clear the saved draft so it doesn't reappear next time.
+            localStorage.removeItem('gov-report-draft');
+        }
+    });
+
+    // ---------- Save Draft (browser-side autosave, no server storage needed) ----------
+    (function () {
+        var DRAFT_KEY = 'gov-report-draft';
+        var draftFields = ['id_title', 'id_description', 'id_address', 'id_ward'];
+        var form = document.getElementById('issue-form');
+
+        function saveDraft() {
+            var draft = {};
+            draftFields.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) draft[id] = el.value;
+            });
+            draft.savedAt = new Date().toISOString();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        }
+
+        var saveTimer;
+        draftFields.forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', function () {
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(saveDraft, 800);
+            });
+        });
+
+        // On page load, offer to restore a previously saved draft.
+        var existing = localStorage.getItem(DRAFT_KEY);
+        if (existing) {
+            try {
+                var draft = JSON.parse(existing);
+                var hasContent = draftFields.some(function (id) { return draft[id]; });
+                if (hasContent) {
+                    var bar = document.createElement('div');
+                    bar.className = 'alert alert-info d-flex justify-content-between align-items-center mb-3';
+                    bar.innerHTML =
+                        '<span><i class="bi bi-clock-history me-1"></i>{% trans "You have an unsaved draft from before." %}</span>' +
+                        '<span>' +
+                        '<button type="button" class="btn btn-sm btn-gov-primary me-2" id="restore-draft-btn">{% trans "Restore" %}</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary" id="discard-draft-btn">{% trans "Discard" %}</button>' +
+                        '</span>';
+                    form.parentNode.insertBefore(bar, form);
+
+                    document.getElementById('restore-draft-btn').addEventListener('click', function () {
+                        draftFields.forEach(function (id) {
+                            var el = document.getElementById(id);
+                            if (el && draft[id]) el.value = draft[id];
+                        });
+                        bar.remove();
+                        if (window.govToast) { window.govToast("{% trans 'Draft restored.' %}", "success"); }
+                    });
+                    document.getElementById('discard-draft-btn').addEventListener('click', function () {
+                        localStorage.removeItem(DRAFT_KEY);
+                        bar.remove();
+                    });
+                }
+            } catch (e) { /* corrupted draft, ignore */ }
+        }
+    })();
+</script>
+{% endblock %}

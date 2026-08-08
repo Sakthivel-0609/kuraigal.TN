@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Analytics Dashboard" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-bar-chart-line-fill"></i>{% trans "Analytics Dashboard" %}</h2>
+            <p>{% trans "City-wide complaint statistics, computed live from the database." %}</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if user.is_staff %}
+            <a href="{% url 'export_issues_csv' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>{% trans "Export to Excel" %}
+            </a>
+            {% endif %}
+            <a href="{% url 'analytics_pdf' %}" class="btn btn-hero-primary btn-sm">
+                <i class="bi bi-file-earmark-arrow-down-fill me-1"></i>{% trans "Export PDF Report" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- ================= SUMMARY STAT CARDS ================= -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card bg-grad-navy fade-in-up stagger-1">
+                <i class="bi bi-inboxes stat-icon"></i>
+                <div class="stat-number" data-counter="{{ total_issues }}">0</div>
+                <div class="stat-label">{% trans "Total Issues" %}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card bg-grad-green fade-in-up stagger-2">
+                <i class="bi bi-check-circle stat-icon"></i>
+                <div class="stat-number" data-counter="{{ resolved }}">0</div>
+                <div class="stat-label">{% trans "Resolved" %}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card bg-grad-red fade-in-up stagger-3">
+                <i class="bi bi-exclamation-triangle stat-icon"></i>
+                <div class="stat-number" data-counter="{{ emergency }}">0</div>
+                <div class="stat-label">🚨 {% trans "Active Emergencies" %}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card bg-grad-yellow fade-in-up stagger-4">
+                <i class="bi bi-speedometer2 stat-icon"></i>
+                <div class="stat-number">{{ resolution_rate }}%</div>
+                <div class="stat-label">{% trans "Resolution Rate" %}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CHARTS ================= -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="chart-card">
+                <h5 class="section-title mb-3"><i class="bi bi-tags me-2"></i>{% trans "Category-wise" %}</h5>
+                <div style="position: relative; height: 280px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-card">
+                <h5 class="section-title mb-3"><i class="bi bi-pie-chart me-2"></i>{% trans "Status-wise" %}</h5>
+                <div style="position: relative; height: 280px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DEPARTMENT PERFORMANCE ================= -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="section-title mb-3"><i class="bi bi-building me-2"></i>{% trans "Department Performance" %}</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Department" %}</th>
+                            <th class="text-end">{% trans "Total" %}</th>
+                            <th class="text-end">{% trans "Resolved" %}</th>
+                            <th style="width: 180px;">{% trans "Resolution Rate" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in department_performance %}
+                        <tr>
+                            <td>{{ dept.name }}</td>
+                            <td class="text-end">{{ dept.total }}</td>
+                            <td class="text-end">{{ dept.resolved }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-navy" role="progressbar" style="width: {{ dept.rate }}%"></div>
+                                    </div>
+                                    <span class="small text-muted">{{ dept.rate }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-4">{% trans "No department data yet." %}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TOP AREAS TABLE ================= -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="section-title mb-3"><i class="bi bi-geo-alt me-2"></i>{% trans "Top Areas by Issue Count" %}</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Area / Address" %}</th>
+                            <th class="text-end">{% trans "Count" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in by_area %}
+                        <tr>
+                            <td><i class="bi bi-geo-alt-fill text-muted me-1"></i>{{ row.address }}</td>
+                            <td class="text-end"><span class="badge bg-secondary badge-pill">{{ row.count }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-muted text-center py-4">{% trans "No area data yet." %}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if by_ward %}
+    <!-- ================= WARD-WISE TABLE ================= -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="section-title mb-3"><i class="bi bi-signpost me-2"></i>{% trans "Ward-wise Complaints" %}</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Ward" %}</th>
+                            <th class="text-end">{% trans "Total" %}</th>
+                            <th class="text-end">{% trans "Resolved" %}</th>
+                            <th style="width: 160px;">{% trans "Resolution Rate" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in by_ward %}
+                        <tr>
+                            <td><i class="bi bi-signpost-fill text-muted me-1"></i>{{ row.ward }}</td>
+                            <td class="text-end">{{ row.count }}</td>
+                            <td class="text-end">{{ row.resolved_count }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-navy" role="progressbar" style="width: {% widthratio row.resolved_count row.count 100 %}%"></div>
+                                    </div>
+                                    <span class="small text-muted">{% widthratio row.resolved_count row.count 100 %}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    var categoryLabels = [{% for row in by_category %}"{{ row.category__icon }} {{ row.category__name|default:'Uncategorized'|escapejs }}",{% endfor %}];
+    var categoryData = [{% for row in by_category %}{{ row.count }},{% endfor %}];
+
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: {
+            labels: categoryLabels,
+            datasets: [{ label: '{% trans "Issues" %}', data: categoryData, backgroundColor: '#123a6b', borderRadius: 6 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    var statusLabels = [{% for row in by_status %}"{{ row.status }}",{% endfor %}];
+    var statusData = [{% for row in by_status %}{{ row.count }},{% endfor %}];
+    var statusColors = { 'open': '#c22030', 'in_progress': '#b8860b', 'resolved': '#157a3d' };
+
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusData,
+                backgroundColor: statusLabels.map(function(s) { return statusColors[s] || '#6c757d'; })
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+</script>
+{% endblock %}

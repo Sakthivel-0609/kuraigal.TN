@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Home" %}{% endblock %}
+
+{% block content %}
+
+<!-- ================= HERO ================= -->
+<section class="gov-hero">
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="lead-eyebrow mb-3"><i class="bi bi-patch-check-fill"></i> {% trans "Government of Tamil Nadu · Smart City Initiative" %}</span>
+                <h1 class="mt-3 mb-2">{% trans "Kuraigal.TN" %}</h1>
+                <p class="fs-5 mb-1" style="color:#dce8f7;">{% trans "Citizen Civic Issue Reporting System" %}</p>
+                <p class="mb-4" style="color:#c4d5ea; max-width: 640px;">
+                    {% trans "Report Local Issues" %} · {% trans "Track Complaint Progress" %} · {% trans "Build Better Communities Together" %}
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'report_issue' %}" class="btn btn-hero-primary"><i class="bi bi-flag-fill me-1"></i>{% trans "Report Issue" %}</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-hero-primary"><i class="bi bi-flag-fill me-1"></i>{% trans "Report Issue" %}</a>
+                    {% endif %}
+                    <a href="{% url 'issue_list' %}" class="btn btn-hero-outline"><i class="bi bi-list-check me-1"></i>{% trans "View Complaints" %}</a>
+                    <a href="{% url 'issue_list' %}?emergency=1" class="btn btn-hero-emergency"><i class="bi bi-exclamation-triangle-fill me-1"></i>{% trans "Emergency Report" %}</a>
+                    <a href="{% url 'analytics' %}" class="btn btn-hero-outline"><i class="bi bi-bar-chart-line me-1"></i>{% trans "Explore Dashboard" %}</a>
+                </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block">
+                <div class="glass-card p-4 text-center">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="fw-bold fs-3" data-counter="{{ stats.total_issues }}">0</div>
+                            <div class="small" style="color:#c4d5ea;">{% trans "Total Complaints" %}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fw-bold fs-3" data-counter="{{ stats.resolved_issues }}">0</div>
+                            <div class="small" style="color:#c4d5ea;">{% trans "Resolved" %}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fw-bold fs-3" data-counter="{{ stats.citizens }}">0</div>
+                            <div class="small" style="color:#c4d5ea;">{% trans "Citizens" %}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fw-bold fs-3">{{ stats.resolution_rate }}%</div>
+                            <div class="small" style="color:#c4d5ea;">{% trans "Resolution Rate" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="skyline"></div>
+</section>
+
+<!-- ================= LIVE STATISTICS ================= -->
+<section class="gov-section">
+    <div class="container">
+        <div class="row g-3">
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-navy fade-in-up stagger-1">
+                    <i class="bi bi-inboxes stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.total_issues }}">0</div>
+                    <div class="stat-label">{% trans "Total Complaints" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-red fade-in-up stagger-2">
+                    <i class="bi bi-hourglass-split stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.open_issues }}">0</div>
+                    <div class="stat-label">{% trans "Open Complaints" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-yellow fade-in-up stagger-3">
+                    <i class="bi bi-cone-striped stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.in_progress_issues }}">0</div>
+                    <div class="stat-label">{% trans "In Progress" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-green fade-in-up stagger-4">
+                    <i class="bi bi-check-circle stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.resolved_issues }}">0</div>
+                    <div class="stat-label">{% trans "Resolved" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-red fade-in-up stagger-5">
+                    <i class="bi bi-exclamation-triangle stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.emergency_active }}">0</div>
+                    <div class="stat-label">{% trans "Active Emergencies" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-gray fade-in-up stagger-6">
+                    <i class="bi bi-people stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.citizens }}">0</div>
+                    <div class="stat-label">{% trans "Registered Citizens" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-navy fade-in-up stagger-1">
+                    <i class="bi bi-tags stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.categories_count }}">0</div>
+                    <div class="stat-label">{% trans "Issue Categories" %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card bg-grad-green fade-in-up stagger-2">
+                    <i class="bi bi-calendar-week stat-icon"></i>
+                    <div class="stat-number" data-counter="{{ stats.this_week }}">0</div>
+                    <div class="stat-label">{% trans "Reported This Week" %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================= EMERGENCY ALERTS ================= -->
+{% if emergency_issues %}
+<section class="gov-section pt-0">
+    <div class="container">
+        <div class="alert alert-danger border-0 shadow-sm rounded-4 p-4">
+            <h5 class="mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>{% trans "Active Emergency Alerts" %}</h5>
+            <div class="row g-3">
+                {% for issue in emergency_issues %}
+                <div class="col-md-6 col-lg-3">
+                    <a href="{% url 'issue_detail' issue.pk %}" class="text-decoration-none">
+                        <div class="p-3 rounded-3 bg-white bg-opacity-75 h-100">
+                            <span class="badge emergency-badge badge-pill mb-2">🚨 {% trans "Emergency" %}</span>
+                            <div class="fw-semibold text-dark small">{{ issue.title }}</div>
+                            <div class="text-muted small">{{ issue.address|default:"—"|truncatechars:40 }}</div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ================= QUICK SERVICES ================= -->
+<section class="gov-section gov-section-alt">
+    <div class="container">
+        <h2 class="section-title text-center mb-1">{% trans "Quick Services" %}</h2>
+        <p class="section-subtitle text-center mb-4">{% trans "Everything a citizen needs, one click away" %}</p>
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% if user.is_authenticated %}{% url 'report_issue' %}{% else %}{% url 'login' %}{% endif %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-megaphone-fill"></i></div>
+                    <div class="service-title">{% trans "Report Complaint" %}</div>
+                    <div class="service-desc">{% trans "Raise a new civic issue" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'issue_list' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-search"></i></div>
+                    <div class="service-title">{% trans "Track Complaint" %}</div>
+                    <div class="service-desc">{% trans "Check status & updates" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'nearby_issues' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div class="service-title">{% trans "Nearby Issues" %}</div>
+                    <div class="service-desc">{% trans "Issues around you" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'issue_list' %}?emergency=1" class="service-card">
+                    <div class="service-icon" style="background:linear-gradient(135deg,var(--gov-red),var(--gov-emergency));"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="service-title">{% trans "Emergency Report" %}</div>
+                    <div class="service-desc">{% trans "Urgent civic dangers" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'heatmap' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-map-fill"></i></div>
+                    <div class="service-title">{% trans "Heatmap" %}</div>
+                    <div class="service-desc">{% trans "Complaint density map" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'analytics' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div class="service-title">{% trans "Analytics" %}</div>
+                    <div class="service-desc">{% trans "City-wide statistics" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'leaderboard' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-trophy-fill"></i></div>
+                    <div class="service-title">{% trans "Leaderboard" %}</div>
+                    <div class="service-desc">{% trans "Top citizen contributors" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% if user.is_authenticated %}{% url 'my_profile' %}{% else %}{% url 'login' %}{% endif %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-person-badge-fill"></i></div>
+                    <div class="service-title">{% trans "My Profile" %}</div>
+                    <div class="service-desc">{% trans "Your reports & points" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'analytics_pdf' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div>
+                    <div class="service-title">{% trans "Download Reports" %}</div>
+                    <div class="service-desc">{% trans "Export as PDF" %}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'notifications' %}" class="service-card">
+                    <div class="service-icon"><i class="bi bi-bell-fill"></i></div>
+                    <div class="service-title">{% trans "Notifications" %}</div>
+                    <div class="service-desc">{% trans "Your latest updates" %}</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================= RECENT COMPLAINTS ================= -->
+<section class="gov-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="section-title mb-1">{% trans "Recent Complaints" %}</h2>
+                <p class="section-subtitle mb-0">{% trans "Latest issues reported by citizens" %}</p>
+            </div>
+            <a href="{% url 'issue_list' %}" class="btn btn-gov-primary btn-sm">{% trans "View All" %} <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-3">
+            {% for issue in recent_issues %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card issue-card h-100 {% if issue.is_emergency %}emergency{% endif %} fade-in-up">
+                    {% if issue.image %}
+                        <img src="{{ issue.image.url }}" class="card-img-top" alt="{{ issue.title }}" loading="lazy">
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            {% if issue.is_emergency %}<span class="badge emergency-badge badge-pill">🚨 {% trans "Emergency" %}</span>{% endif %}
+                            <span class="badge status-badge-{{ issue.status }} badge-pill">{{ issue.get_status_display }}</span>
+                            {% if issue.category %}<span class="badge bg-secondary badge-pill">{{ issue.category.icon }} {{ issue.category.name }}</span>{% endif %}
+                        </div>
+                        <h6 class="card-title"><a href="{% url 'issue_detail' issue.pk %}">{{ issue.title }}</a></h6>
+                        <p class="card-text text-muted small mb-1">{{ issue.description|truncatewords:15 }}</p>
+                        <p class="card-text small text-muted mb-0"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"Location on map" }}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center bg-transparent">
+                        <small class="text-muted"><i class="bi bi-hand-thumbs-up me-1"></i>{{ issue.votes }} · {{ issue.display_reporter_name }}</small>
+                        <small class="text-muted">{{ issue.created_at|timesince }} {% trans "ago" %}</small>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                    <p>{% trans "No complaints reported yet." %}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ================= TOP CONTRIBUTORS ================= -->
+{% if top_contributors %}
+<section class="gov-section gov-section-alt">
+    <div class="container">
+        <h2 class="section-title mb-1">{% trans "Top Contributors" %}</h2>
+        <p class="section-subtitle mb-4">{% trans "Citizens making the biggest impact this season" %}</p>
+        <div class="row g-3">
+            {% for profile in top_contributors %}
+            <div class="col-6 col-md-4 col-lg-2-4" style="flex:0 0 20%; max-width:20%;">
+                <div class="service-card">
+                    <div class="badge-emoji">{{ profile.badge.2 }}</div>
+                    <div class="service-title">{{ profile.user.username }}</div>
+                    <div class="service-desc">{{ profile.badge.1 }} · {{ profile.points }} {% trans "pts" %}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-3">
+            <a href="{% url 'leaderboard' %}" class="btn btn-gov-primary btn-sm">{% trans "View Full Leaderboard" %} <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ================= ANNOUNCEMENT STRIP ================= -->
+<section class="gov-section pt-0">
+    <div class="container">
+        <div class="p-4 rounded-4 shadow-sm" style="background: var(--gov-green-light); border: 1px solid var(--gov-green);">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-megaphone-fill fs-3" style="color: var(--gov-green);"></i>
+                <div>
+                    <h6 class="mb-1">{% trans "Government Announcement" %}</h6>
+                    <p class="mb-0 small">{% trans "Citizens are encouraged to report civic issues with accurate location and photos for faster resolution by the concerned department." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

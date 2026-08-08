@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Issue Heatmap" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-thermometer-half"></i>{% trans "Neighborhood Issue Heatmap" %}</h2>
+        <p>{% trans "Darker/red zones show higher concentration of unresolved issues. Emergency issues are weighted higher." %}</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+            <div class="row mb-3 g-2 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-tags me-1"></i>{% trans "Filter by Category" %}</label>
+                    <select id="category-filter" class="form-select">
+                        <option value="">{% trans "All Categories" %}</option>
+                        {% for c in categories %}
+                            <option value="{{ c.id }}">{{ c.icon }} {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <div class="d-flex gap-3 align-items-center pt-3 flex-wrap">
+                        <span class="small text-muted fw-semibold">{% trans "Legend" %}:</span>
+                        <span class="small"><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#157a3d;"></span>{% trans "Low" %}</span>
+                        <span class="small"><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#b8860b;"></span>{% trans "Medium" %}</span>
+                        <span class="small"><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#c22030;"></span>{% trans "High" %}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex justify-content-md-end gap-2 pt-3">
+                    <button type="button" id="locate-heatmap-btn" class="btn btn-outline-secondary btn-sm" title="{% trans 'Center on my location' %}">
+                        <i class="bi bi-broadcast"></i>
+                    </button>
+                    <button type="button" id="fullscreen-heatmap-btn" class="btn btn-outline-secondary btn-sm" title="{% trans 'Full screen' %}">
+                        <i class="bi bi-arrows-fullscreen"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="heatmap-wrapper">
+                <div id="heatmap"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    #heatmap-wrapper:fullscreen { background: var(--gov-surface); padding: 16px; }
+    #heatmap-wrapper:fullscreen #heatmap { height: calc(100vh - 32px) !important; }
+</style>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script>
+    var defaultLat = 13.0827, defaultLng = 80.2707;
+    var map = L.map('heatmap').setView([defaultLat, defaultLng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var heatLayer;
+
+    function loadHeatmap(categoryId) {
+        var url = "{% url 'heatmap_data' %}";
+        if (categoryId) {
+            url += "?category=" + categoryId;
+        }
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (heatLayer) {
+                    map.removeLayer(heatLayer);
+                }
+                heatLayer = L.heatLayer(data, { radius: 25, blur: 18, maxZoom: 17 }).addTo(map);
+            });
+    }
+
+    loadHeatmap('');
+
+    document.getElementById('category-filter').addEventListener('change', function() {
+        loadHeatmap(this.value);
+    });
+
+    document.getElementById('locate-heatmap-btn').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+            }, function() {
+                if (window.govToast) {
+                    window.govToast("{% trans 'Could not get your location. Please allow location access.' %}", "danger");
+                }
+            });
+        }
+    });
+
+    document.getElementById('fullscreen-heatmap-btn').addEventListener('click', function() {
+        var wrapper = document.getElementById('heatmap-wrapper');
+        if (!document.fullscreenElement) {
+            wrapper.requestFullscreen().then(function() {
+                setTimeout(function() { map.invalidateSize(); }, 150);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    document.addEventListener('fullscreenchange', function() {
+        setTimeout(function() { map.invalidateSize(); }, 150);
+    });
+</script>
+{% endblock %}

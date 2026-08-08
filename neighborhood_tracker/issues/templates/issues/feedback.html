@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Feedback" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-chat-square-text-fill"></i>{% trans "Citizen Feedback" %}</h2>
+        <p>{% trans "Share suggestions, appreciation, or concerns about the portal itself." %}</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Type" %}</label>
+                            <select name="feedback_type" class="form-select">
+                                {% for value, label in feedback_type_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Subject" %}</label>
+                            <input type="text" name="subject" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% trans "Message" %}</label>
+                            <textarea name="message" class="form-control" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-gov-primary px-4"><i class="bi bi-send-fill me-1"></i>{% trans "Submit Feedback" %}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <h6 class="section-title mb-3"><i class="bi bi-clock-history me-2"></i>{% trans "Your Past Feedback" %}</h6>
+            {% for fb in my_feedback %}
+            <div class="card border-0 shadow-sm rounded-4 mb-2">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <strong class="small">{{ fb.subject }}</strong>
+                        {% if fb.is_reviewed %}
+                            <span class="badge bg-success badge-pill">{% trans "Reviewed" %}</span>
+                        {% else %}
+                            <span class="badge bg-secondary badge-pill">{% trans "Pending" %}</span>
+                        {% endif %}
+                    </div>
+                    <p class="small text-muted mb-1">{{ fb.get_feedback_type_display }} · {{ fb.created_at|timesince }} {% trans "ago" %}</p>
+                    <p class="small mb-0">{{ fb.message|truncatewords:20 }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted small">{% trans "You haven't submitted any feedback yet." %}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

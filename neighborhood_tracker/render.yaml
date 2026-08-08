@@ -1,0 +1,54 @@
+# Render.com Blueprint - lets Render auto-configure a live web service + free
+# PostgreSQL database straight from this GitHub repo, without clicking through
+# each setting by hand. See: https://render.com/docs/blueprint-spec
+#
+# To use: push this repo to GitHub, then on Render.com choose
+# "New +" -> "Blueprint" -> connect this repo. Render reads this file and
+# creates everything below automatically.
+
+databases:
+  - name: kuraigal-tn-db
+    plan: free
+    databaseName: kuraigal_tn
+    user: kuraigal_tn
+
+services:
+  - type: web
+    name: kuraigal-tn
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    startCommand: "gunicorn neighborhood_tracker.wsgi:application"
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_DB_ENGINE
+        value: postgresql
+      - key: DJANGO_DB_NAME
+        fromDatabase:
+          name: kuraigal-tn-db
+          property: database
+      - key: DJANGO_DB_USER
+        fromDatabase:
+          name: kuraigal-tn-db
+          property: user
+      - key: DJANGO_DB_PASSWORD
+        fromDatabase:
+          name: kuraigal-tn-db
+          property: password
+      - key: DJANGO_DB_HOST
+        fromDatabase:
+          name: kuraigal-tn-db
+          property: host
+      - key: DJANGO_DB_PORT
+        fromDatabase:
+          name: kuraigal-tn-db
+          property: port
+      - key: DJANGO_EMAIL_USER
+        value: koraigaltn@gmail.com
+      - key: DJANGO_EMAIL_PASSWORD
+        sync: false

@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ issue.title }}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-1">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        {% if issue.is_emergency %}<span class="badge emergency-badge badge-pill">🚨 {% if issue.emergency_type %}{{ issue.get_emergency_type_display }}{% else %}{% trans "Emergency" %}{% endif %}</span>{% endif %}
+                        {% if issue.escalated %}<span class="badge escalated-badge badge-pill"><i class="bi bi-arrow-up-circle me-1"></i>{% trans "Escalated" %}</span>{% endif %}
+                        <span class="badge status-badge-{{ issue.status }} badge-pill">{{ issue.get_status_display }}</span>
+                        <span class="badge badge-pill priority-badge-{{ issue.priority }}"><i class="bi bi-speedometer2 me-1"></i>{{ issue.get_priority_display }}</span>
+                        {% if issue.category %}<span class="badge bg-secondary badge-pill">{{ issue.category.icon }} {{ issue.category.name }}</span>{% endif %}
+                    </div>
+                    <h2 class="section-title">{{ issue.title }}</h2>
+                    <p class="mb-1 d-flex flex-wrap gap-1 align-items-center">
+                        <span class="badge bg-navy badge-pill"><i class="bi bi-upc-scan me-1"></i>{{ issue.tracking_number }}</span>
+                        {% if issue.department %}<span class="badge bg-secondary badge-pill">{{ issue.department.icon }} {{ issue.department.name }}</span>{% endif %}
+                        {% if issue.assigned_officer %}<span class="badge bg-secondary badge-pill"><i class="bi bi-person-badge me-1"></i>{{ issue.assigned_officer.username }}</span>{% endif %}
+                    </p>
+                    <p class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"See map below" }} · {% trans "reported by" %} {{ issue.display_reporter_name }} · {{ issue.created_at|timesince }} {% trans "ago" %}</p>
+
+                    {% if issue.completion_image %}
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="position-relative">
+                                    <span class="badge bg-secondary badge-pill position-absolute top-0 start-0 m-2">{% trans "BEFORE" %}</span>
+                                    {% if issue.image %}
+                                        <img src="{{ issue.image.url }}" class="img-fluid rounded-4" style="height: 260px; width:100%; object-fit:cover;" alt="{% trans 'Before' %}" loading="lazy">
+                                    {% else %}
+                                        <div class="rounded-4 d-flex align-items-center justify-content-center" style="height:260px; background: var(--gov-bg);"><span class="text-muted small">{% trans "No photo provided" %}</span></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="position-relative">
+                                    <span class="badge bg-success badge-pill position-absolute top-0 start-0 m-2">{% trans "AFTER" %}</span>
+                                    <img src="{{ issue.completion_image.url }}" class="img-fluid rounded-4" style="height: 260px; width:100%; object-fit:cover;" alt="{% trans 'After' %}" loading="lazy">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="small text-muted mb-3"><i class="bi bi-check2-circle me-1"></i>{% trans "Before & After comparison — photo uploaded by the officer on completion." %}</p>
+                    {% elif issue.image %}
+                        <img src="{{ issue.image.url }}" class="img-fluid rounded-4 mb-3" style="max-height: 350px; width:100%; object-fit:cover;" alt="{{ issue.title }}" loading="lazy">
+                    {% endif %}
+
+                    <p>{{ issue.description|linebreaks }}</p>
+
+                    {% if issue.description|wordcount > 30 %}
+                    <div class="p-3 rounded-3 mb-3" style="background: var(--gov-bg); border: 1px dashed var(--gov-border);">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-robot" style="color: var(--gov-navy);"></i>
+                            <div>
+                                <div class="small fw-semibold mb-1">{% trans "AI Summary" %}</div>
+                                <div class="small text-muted mb-0">{{ issue.ai_summary }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if est_resolution_days %}
+                    <div class="p-3 rounded-3 mb-3" style="background: var(--gov-green-light); border: 1px solid var(--gov-green);">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-hourglass-split" style="color: var(--gov-green);"></i>
+                            <div>
+                                <div class="small fw-semibold mb-1">{% trans "Estimated Resolution Time" %}</div>
+                                <div class="small text-muted mb-0">
+                                    {% blocktrans %}Based on similar past complaints in this category, this typically takes about{% endblocktrans %}
+                                    <strong>{{ est_resolution_days }} {% trans "days" %}</strong>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div id="detail-map" class="mb-3"></div>
+
+                    <div class="d-flex gap-2 mb-4 flex-wrap">
+                        {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'toggle_upvote' issue.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if has_upvoted %}btn-gov-primary{% else %}btn-outline-secondary{% endif %}">
+                                <i class="bi bi-hand-thumbs-up{% if has_upvoted %}-fill{% endif %} me-1"></i>
+                                {{ issue.upvote_count }} {% if has_upvoted %}{% trans "Upvoted" %}{% else %}{% trans "Upvote" %}{% endif %}
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'toggle_bookmark' issue.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if has_bookmarked %}btn-gov-primary{% else %}btn-outline-secondary{% endif %}">
+                                <i class="bi bi-bookmark{% if has_bookmarked %}-fill{% endif %} me-1"></i>
+                                {% if has_bookmarked %}{% trans "Bookmarked" %}{% else %}{% trans "Bookmark" %}{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <a href="{% url 'issue_pdf' issue.pk %}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-arrow-down me-1"></i>{% trans "Export PDF" %}</a>
+
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#shareModal">
+                            <i class="bi bi-share me-1"></i>{% trans "Share" %}
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                            <i class="bi bi-printer me-1"></i>{% trans "Print" %}
+                        </button>
+
+                        {% if user.is_staff %}
+                        <form method="post" action="{% url 'update_status' issue.pk %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <select name="status" class="form-select">
+                                {% for value, label in issue.STATUS_CHOICES %}
+                                    <option value="{{ value }}" {% if issue.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-gov-primary">{% trans "Update Status" %}</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    {% if user.is_staff %}
+                    <div class="card border-0 mb-4" style="background: var(--gov-bg);">
+                        <div class="card-body">
+                            <h6 class="section-title mb-3"><i class="bi bi-diagram-3 me-2"></i>{% trans "Staff Assignment" %}</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">{% trans "Department" %}</label>
+                                    <form method="post" action="{% url 'assign_department' issue.pk %}" class="d-flex gap-2">
+                                        {% csrf_token %}
+                                        <select name="department" class="form-select form-select-sm">
+                                            <option value="">{% trans "— None —" %}</option>
+                                            {% for dept in all_departments %}
+                                                <option value="{{ dept.id }}" {% if issue.department_id == dept.id %}selected{% endif %}>{{ dept.icon }} {{ dept.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Save" %}</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">{% trans "Assigned Officer" %}</label>
+                                    <form method="post" action="{% url 'assign_officer' issue.pk %}" class="d-flex gap-2">
+                                        {% csrf_token %}
+                                        <select name="officer" class="form-select form-select-sm">
+                                            <option value="">{% trans "— Unassigned —" %}</option>
+                                            {% for officer in staff_users %}
+                                                <option value="{{ officer.id }}" {% if issue.assigned_officer_id == officer.id %}selected{% endif %}>{{ officer.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Assign" %}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Timeline -->
+                    <h5 class="section-title"><i class="bi bi-clock-history me-2"></i>{% trans "Issue Timeline" %}</h5>
+                    <div class="timeline mb-4">
+                        {% for h in history %}
+                            <div class="timeline-item">
+                                <strong>{{ h.get_status_display }}</strong>
+                                <span class="text-muted small">— {{ h.note }} · {{ h.created_at|timesince }} {% trans "ago" %}
+                                {% if h.changed_by %}({{ h.changed_by.username }}){% endif %}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Officer Rating -->
+                    {% if can_rate_officer %}
+                    <div class="p-3 rounded-3 mb-4" style="background: var(--gov-green-light); border: 1px solid var(--gov-green);">
+                        <h6 class="section-title mb-2"><i class="bi bi-star-fill me-2"></i>{% trans "Rate the Officer's Work" %}</h6>
+                        <form method="post" action="{% url 'rate_officer' issue.pk %}" id="rating-form">
+                            {% csrf_token %}
+                            <div class="star-rating mb-2" id="star-rating">
+                                {% for i in "12345" %}
+                                <i class="bi bi-star star-input" data-value="{{ forloop.counter }}"></i>
+                                {% endfor %}
+                                <input type="hidden" name="stars" id="stars-input" value="0">
+                            </div>
+                            <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" placeholder="{% trans 'Optional comment...' %}"></textarea>
+                            <button type="submit" class="btn btn-sm btn-gov-primary">{% trans "Submit Rating" %}</button>
+                        </form>
+                    </div>
+                    {% elif existing_rating %}
+                    <div class="p-3 rounded-3 mb-4" style="background: var(--gov-bg); border: 1px solid var(--gov-border);">
+                        <h6 class="section-title mb-2"><i class="bi bi-star-fill me-2"></i>{% trans "Your Rating" %}</h6>
+                        <div class="mb-1">
+                            {% for i in "12345" %}
+                                <i class="bi bi-star{% if forloop.counter <= existing_rating.stars %}-fill text-warning{% else %} text-muted{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        {% if existing_rating.comment %}<p class="small text-muted mb-0">{{ existing_rating.comment }}</p>{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <h5 class="section-title mb-0"><i class="bi bi-chat-dots me-2"></i>{% trans "Comments" %} ({{ comments.count }})</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="?comment_sort=newest" class="btn {% if comment_sort == 'newest' %}btn-gov-primary{% else %}btn-outline-secondary{% endif %}">{% trans "Newest" %}</a>
+                            <a href="?comment_sort=oldest" class="btn {% if comment_sort == 'oldest' %}btn-gov-primary{% else %}btn-outline-secondary{% endif %}">{% trans "Oldest" %}</a>
+                            <a href="?comment_sort=liked" class="btn {% if comment_sort == 'liked' %}btn-gov-primary{% else %}btn-outline-secondary{% endif %}">{% trans "Most Liked" %}</a>
+                        </div>
+                    </div>
+
+                    {% for comment in comments %}
+                        <div class="border-bottom py-2" id="comment-{{ comment.pk }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ comment.user.username }}</strong>
+                                    <small class="text-muted">{{ comment.created_at|timesince }} {% trans "ago" %}{% if comment.is_edited %} · {% trans "edited" %}{% endif %}</small>
+                                </div>
+                                {% if user == comment.user %}
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button class="dropdown-item small" type="button" onclick="toggleEditForm({{ comment.pk }})"><i class="bi bi-pencil me-1"></i>{% trans "Edit" %}</button>
+                                        </li>
+                                        <li>
+                                            <form method="post" action="{% url 'delete_comment' comment.pk %}" onsubmit="return confirm('{% trans "Delete this comment?" %}');">
+                                                {% csrf_token %}
+                                                <button class="dropdown-item small text-danger" type="submit"><i class="bi bi-trash me-1"></i>{% trans "Delete" %}</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1" id="comment-text-{{ comment.pk }}">{{ comment.text }}</p>
+
+                            {% if user == comment.user %}
+                            <form method="post" action="{% url 'edit_comment' comment.pk %}" class="d-none mb-2" id="edit-form-{{ comment.pk }}">
+                                {% csrf_token %}
+                                <textarea name="text" class="form-control form-control-sm mb-1" rows="2">{{ comment.text }}</textarea>
+                                <button type="submit" class="btn btn-sm btn-gov-primary">{% trans "Save" %}</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEditForm({{ comment.pk }})">{% trans "Cancel" %}</button>
+                            </form>
+                            {% endif %}
+
+                            {% if user.is_authenticated %}
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 comment-like-btn"
+                                    data-comment-id="{{ comment.pk }}"
+                                    style="color: var(--gov-text-muted);">
+                                <i class="bi bi-hand-thumbs-up{% if request.user in comment.likes.all %}-fill{% endif %}"></i>
+                                <span class="like-count">{{ comment.like_count }}</span>
+                            </button>
+                            {% else %}
+                            <span class="small text-muted"><i class="bi bi-hand-thumbs-up"></i> {{ comment.like_count }}</span>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">{% trans "No comments yet." %}</p>
+                    {% endfor %}
+
+                    {% if user.is_authenticated %}
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        {{ comment_form.text }}
+                        <button type="submit" class="btn btn-gov-primary mt-2">{% trans "Post Comment" %}</button>
+                    </form>
+                    {% else %}
+                    <p class="text-muted mt-3"><a href="{% url 'login' %}">{% trans "Login" %}</a> {% trans "to comment." %}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- QR Code card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3 text-center">
+                <div class="card-body">
+                    <h6 class="section-title mb-2"><i class="bi bi-qr-code me-2"></i>{% trans "Scan to View" %}</h6>
+                    <img src="{% url 'issue_qr' issue.pk %}" alt="{% trans 'QR Code' %}" class="img-fluid mb-2" style="max-width:160px;">
+                    <div>
+                        <a href="{% url 'issue_qr' issue.pk %}" download="qr-{{ issue.tracking_number }}.png" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-download me-1"></i>{% trans "Download QR" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h5 class="section-title mb-3"><i class="bi bi-geo-alt me-2"></i>{% trans "Nearby Issues" %}</h5>
+                    {% for n_issue, dist in nearby %}
+                        <a href="{% url 'issue_detail' n_issue.pk %}" class="text-decoration-none">
+                            <div class="card mb-2 border-0" style="background: var(--gov-bg);">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="small" style="color: var(--gov-text);">{{ n_issue.title|truncatechars:35 }}</strong>
+                                        <span class="badge status-badge-{{ n_issue.status }} badge-pill">{{ n_issue.get_status_display }}</span>
+                                    </div>
+                                    <small class="text-muted">{{ dist }}m {% trans "away" %} · <i class="bi bi-hand-thumbs-up"></i> {{ n_issue.upvote_count }}</small>
+                                </div>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <p class="text-muted small mb-0">{% trans "No other nearby issues." %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= SHARE MODAL ================= -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-share me-2"></i>{% trans "Share this Complaint" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+                    <a id="share-whatsapp" href="#" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>
+                    <a id="share-facebook" href="#" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-facebook me-1"></i>Facebook</a>
+                    <a id="share-twitter" href="#" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-twitter-x me-1"></i>X</a>
+                    <a id="share-telegram" href="#" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-telegram me-1"></i>Telegram</a>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="text" id="share-url-input" class="form-control" readonly value="">
+                    <button class="btn btn-gov-primary" type="button" id="copy-link-btn"><i class="bi bi-clipboard me-1"></i>{% trans "Copy" %}</button>
+                </div>
+                <hr>
+                <p class="small text-muted mb-2"><i class="bi bi-info-circle me-1"></i>{% trans "WhatsApp links above can only share text, not files (a WhatsApp platform limit, not ours). To send the actual PDF with full details, use this:" %}</p>
+                <button type="button" id="share-pdf-btn" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>{% trans "Share PDF via WhatsApp / Email / Other Apps" %}
+                </button>
+                <p class="small text-muted mt-2 mb-0 d-none" id="share-pdf-fallback">
+                    {% trans "Your browser doesn't support direct file sharing. Please" %}
+                    <a href="{% url 'issue_pdf' issue.pk %}">{% trans "download the PDF" %}</a>
+                    {% trans "and attach it manually in WhatsApp." %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('detail-map').setView([{{ issue.latitude }}, {{ issue.longitude }}], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    L.marker([{{ issue.latitude }}, {{ issue.longitude }}]).addTo(map);
+
+    // ---------- Share links ----------
+    var pageUrl = window.location.href;
+    var shareText = encodeURIComponent(
+        "{{ issue.title|escapejs }}\n" +
+        "{% trans 'Tracking No' %}: {{ issue.tracking_number }}\n" +
+        "{% trans 'Status' %}: {{ issue.get_status_display }}\n" +
+        "{% if issue.address %}{% trans 'Location' %}: {{ issue.address|escapejs }}\n{% endif %}" +
+        "{% trans 'Reported via Kuraigal.TN' %}"
+    );
+    document.getElementById('share-url-input').value = pageUrl;
+    document.getElementById('share-whatsapp').href = 'https://wa.me/?text=' + shareText + '%20' + encodeURIComponent(pageUrl);
+    document.getElementById('share-facebook').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl);
+    document.getElementById('share-twitter').href = 'https://twitter.com/intent/tweet?text=' + shareText + '&url=' + encodeURIComponent(pageUrl);
+    document.getElementById('share-telegram').href = 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + shareText;
+
+    document.getElementById('copy-link-btn').addEventListener('click', function() {
+        var input = document.getElementById('share-url-input');
+        input.select();
+        navigator.clipboard.writeText(input.value).then(function() {
+            if (window.govToast) { window.govToast("{% trans 'Link copied!' %}", "success"); }
+        });
+    });
+
+    // ---------- Share PDF with actual file attachment (Web Share API) ----------
+    // WhatsApp's wa.me links can only pre-fill text, never a file - that's a
+    // WhatsApp platform limit. The Web Share API (navigator.share with files)
+    // is the only way a website can hand a real file to WhatsApp/Email/etc,
+    // by opening the phone's native "Share" sheet. Works on modern mobile
+    // Chrome/Safari over HTTPS; desktop browsers mostly don't support file
+    // sharing, so we show a manual-download fallback there.
+    document.getElementById('share-pdf-btn').addEventListener('click', function() {
+        var btn = this;
+        var originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>{% trans "Preparing PDF..." %}';
+
+        fetch("{% url 'issue_pdf' issue.pk %}")
+            .then(function(res) { return res.blob(); })
+            .then(function(blob) {
+                var file = new File([blob], "{{ issue.tracking_number }}.pdf", { type: 'application/pdf' });
+                var shareData = {
+                    files: [file],
+                    title: "{{ issue.title|escapejs }}",
+                    text: "{% trans 'Civic issue report' %}: {{ issue.title|escapejs }} ({{ issue.tracking_number }})"
+                };
+
+                if (navigator.canShare && navigator.canShare(shareData)) {
+                    navigator.share(shareData).catch(function() { /* user cancelled - not an error */ });
+                } else {
+                    document.getElementById('share-pdf-fallback').classList.remove('d-none');
+                    if (window.govToast) {
+                        window.govToast("{% trans 'File sharing not supported on this browser/device.' %}", "danger");
+                    }
+                }
+            })
+            .catch(function() {
+                if (window.govToast) { window.govToast("{% trans 'Could not prepare the PDF. Please try downloading it instead.' %}", "danger"); }
+            })
+            .finally(function() {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            });
+    });
+
+    // ---------- Comment edit toggle ----------
+    function toggleEditForm(commentId) {
+        var form = document.getElementById('edit-form-' + commentId);
+        var text = document.getElementById('comment-text-' + commentId);
+        if (form.classList.contains('d-none')) {
+            form.classList.remove('d-none');
+            text.classList.add('d-none');
+        } else {
+            form.classList.add('d-none');
+            text.classList.remove('d-none');
+        }
+    }
+
+    // ---------- Comment like (AJAX) ----------
+    document.querySelectorAll('.comment-like-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var commentId = btn.getAttribute('data-comment-id');
+            fetch('/comment/' + commentId + '/like/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                btn.querySelector('.like-count').textContent = data.likes;
+                var icon = btn.querySelector('i');
+                icon.className = data.liked ? 'bi bi-hand-thumbs-up-fill' : 'bi bi-hand-thumbs-up';
+            });
+        });
+    });
+
+    // ---------- Star rating widget ----------
+    var starContainer = document.getElementById('star-rating');
+    if (starContainer) {
+        var stars = starContainer.querySelectorAll('.star-input');
+        var starsInput = document.getElementById('stars-input');
+
+        function paintStars(value) {
+            stars.forEach(function(star) {
+                var v = parseInt(star.getAttribute('data-value'), 10);
+                star.classList.toggle('bi-star-fill', v <= value);
+                star.classList.toggle('bi-star', v > value);
+            });
+        }
+        stars.forEach(function(star) {
+            star.addEventListener('click', function() {
+                var value = parseInt(star.getAttribute('data-value'), 10);
+                starsInput.value = value;
+                paintStars(value);
+            });
+            star.addEventListener('mouseenter', function() {
+                paintStars(parseInt(star.getAttribute('data-value'), 10));
+            });
+        });
+        starContainer.addEventListener('mouseleave', function() {
+            paintStars(parseInt(starsInput.value, 10) || 0);
+        });
+
+        document.getElementById('rating-form').addEventListener('submit', function(e) {
+            if (parseInt(starsInput.value, 10) < 1) {
+                e.preventDefault();
+                if (window.govToast) { window.govToast("{% trans 'Please select a star rating.' %}", "danger"); }
+            }
+        });
+    }
+</script>
+{% endblock %}

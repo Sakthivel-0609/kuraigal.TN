@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Notifications" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-bell-fill"></i>{% trans "Notifications" %}</h2>
+        <p>{% trans "Stay updated on your reported issues and community activity." %}</p>
+    </div>
+
+    <div class="mb-4" style="max-width: 720px;">
+        {% for n in notifications %}
+            <a href="{% if n.issue %}{% url 'issue_detail' n.issue.pk %}{% else %}#{% endif %}"
+               class="notif-item text-decoration-none {% if not n.is_read %}unread{% endif %} fade-in-up">
+                <span class="notif-icon"><i class="bi bi-bell"></i></span>
+                <span class="flex-grow-1">
+                    <span class="d-block {% if not n.is_read %}fw-semibold{% endif %}" style="color: var(--gov-text);">{{ n.message }}</span>
+                    <small class="text-muted">{{ n.created_at|timesince }} {% trans "ago" %}</small>
+                </span>
+            </a>
+        {% empty %}
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-bell-slash"></i></div>
+                <p>{% trans "No notifications yet." %}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

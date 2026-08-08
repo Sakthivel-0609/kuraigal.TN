@@ -1,0 +1,377 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% trans "Kuraigal.TN" %}{% endblock %} · {% trans "Citizen Grievance Portal" %}</title>
+    <meta name="description" content="{% trans 'Kuraigal.TN - Citizen Civic Issue Reporting System. Report local issues, track complaint progress and build better communities together.' %}">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 + Icons + Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <!-- Project theme -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block extra_head %}{% endblock %}
+
+    <!-- PWA: installable app + theme color -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0b2545">
+    <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{% trans 'Kuraigal.TN' %}">
+
+    <script>
+        // Apply saved theme before paint to avoid flash-of-wrong-theme
+        (function () {
+            var theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
+</head>
+<body{% if user.is_authenticated %} data-notifications-poll-url="{% url 'notifications_poll' %}"{% endif %}>
+<a href="#main-content" class="skip-link">{% trans "Skip to main content" %}</a>
+
+<!-- ================= TOP UTILITY BAR ================= -->
+<div class="gov-topbar d-none d-md-block">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-geo-alt-fill me-1"></i>
+            {% trans "Government of Tamil Nadu" %} &middot; {% trans "Smart City Citizen Services" %}
+        </div>
+        <div class="d-flex gap-3">
+            <span><i class="bi bi-telephone-fill me-1"></i>1913 {% trans "(Helpline)" %}</span>
+            <a href="{% url 'notifications' %}" class="text-decoration-none"><i class="bi bi-envelope-fill me-1"></i>{% trans "Contact" %}</a>
+            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="color:#cfe0f5;" data-toggle-contrast title="{% trans 'Toggle high contrast' %}">
+                <i class="bi bi-circle-half"></i> {% trans "High Contrast" %}
+            </button>
+            <span>
+                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="color:#cfe0f5;" data-font-step="-1" title="{% trans 'Decrease font size' %}">A-</button>
+                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="color:#cfe0f5;" data-font-step="1" title="{% trans 'Increase font size' %}">A+</button>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar navbar-expand-lg navbar-dark gov-navbar sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <span class="brand-emblem">🏛️</span>
+            <span>
+                <span class="brand-title d-block">{% trans "Kuraigal.TN" %}</span>
+                <span class="brand-subtitle d-block">{% trans "Citizen Civic Issue Reporting System" %}</span>
+            </span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-label="{% trans 'Toggle navigation' %}">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}"><i class="bi bi-house-door me-1"></i>{% trans "Home" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'issue_list' %}active{% endif %}" href="{% url 'issue_list' %}"><i class="bi bi-list-check me-1"></i>{% trans "Issues" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'heatmap' %}active{% endif %}" href="{% url 'heatmap' %}"><i class="bi bi-thermometer-half me-1"></i>{% trans "Heatmap" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'nearby_issues' %}active{% endif %}" href="{% url 'nearby_issues' %}"><i class="bi bi-geo-alt me-1"></i>{% trans "Nearby" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'analytics' %}"><i class="bi bi-bar-chart-line me-1"></i>{% trans "Analytics" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'departments' %}active{% endif %}" href="{% url 'departments' %}"><i class="bi bi-building me-1"></i>{% trans "Departments" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'emergency_dashboard' %}active{% endif %}" href="{% url 'emergency_dashboard' %}" style="color: #ffb3b3 !important;"><i class="bi bi-exclamation-triangle-fill me-1"></i>{% trans "Emergency" %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'leaderboard' %}active{% endif %}" href="{% url 'leaderboard' %}"><i class="bi bi-trophy me-1"></i>{% trans "Leaderboard" %}</a></li>
+                <li class="nav-item"><a class="nav-link text-warning-emphasis" href="{% url 'issue_list' %}?emergency=1"><i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i>{% trans "Emergency" %}</a></li>
+            </ul>
+            <ul class="navbar-nav align-items-lg-center gap-lg-2">
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a href="{% url 'report_issue' %}" class="btn btn-gov-primary btn-sm px-3"><i class="bi bi-plus-circle me-1"></i>{% trans "Report Issue" %}</a>
+                </li>
+                {% endif %}
+
+                <!-- Dark mode toggle -->
+                <li class="nav-item">
+                    <button id="theme-toggle" class="btn-icon" type="button" title="{% trans 'Toggle dark mode' %}">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
+                </li>
+
+                <!-- Language switcher -->
+                <li class="nav-item">
+                    <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.path }}">
+                        <select name="language" class="form-select form-select-sm lang-select d-inline w-auto" onchange="this.form.submit()" aria-label="{% trans 'Select language' %}">
+                            {% get_current_language as CURRENT_LANGUAGE %}
+                            {% get_available_languages as AVAILABLE_LANGUAGES %}
+                            {% for lang_code, lang_name in AVAILABLE_LANGUAGES %}
+                                <option value="{{ lang_code }}" {% if lang_code == CURRENT_LANGUAGE %}selected{% endif %}>{{ lang_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </li>
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="btn-icon position-relative" href="{% url 'notifications' %}" title="{% trans 'Notifications' %}">
+                            <i class="bi bi-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem;">
+                                    {{ unread_notifications_count }}
+                                </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" href="{% url 'my_profile' %}"><i class="bi bi-person me-2"></i>{% trans "My Profile" %}</a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_bookmarks' %}"><i class="bi bi-bookmark-star me-2"></i>{% trans "My Bookmarks" %}</a></li>
+                            <li><a class="dropdown-item" href="{% url 'volunteer' %}"><i class="bi bi-people me-2"></i>{% trans "Volunteer" %}</a></li>
+                            <li><a class="dropdown-item" href="{% url 'feedback' %}"><i class="bi bi-chat-square-text me-2"></i>{% trans "Feedback" %}</a></li>
+                            <li><button type="button" class="dropdown-item" data-enable-push><i class="bi bi-bell-fill me-2"></i>{% trans "Enable Notifications" %}</button></li>
+                            <li><a class="dropdown-item" href="{% url 'notifications' %}"><i class="bi bi-bell me-2"></i>{% trans "Notifications" %}</a></li>
+                            {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="{% url 'officer_dashboard' %}"><i class="bi bi-person-workspace me-2"></i>{% trans "Officer Dashboard" %}</a></li>
+                            <li><a class="dropdown-item" href="{% url 'activity_log' %}"><i class="bi bi-shield-lock me-2"></i>{% trans "Activity Log" %}</a></li>
+                            <li><a class="dropdown-item" href="/admin/"><i class="bi bi-speedometer2 me-2"></i>{% trans "Admin Dashboard" %}</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i>{% trans "Logout" %}</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right me-1"></i>{% trans "Login" %}</a></li>
+                    <li class="nav-item"><a class="btn btn-gov-primary btn-sm px-3" href="{% url 'signup' %}">{% trans "Sign Up" %}</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ================= MAIN CONTENT ================= -->
+<main id="main-content">
+    <div class="container mt-4 mb-2">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'Close' %}"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% block content %}{% endblock %}
+</main>
+
+<!-- ================= FLOATING ACTION BUTTON ================= -->
+{% if user.is_authenticated %}
+<a href="{% url 'report_issue' %}" class="fab-report" title="{% trans 'Report an Issue' %}">
+    <i class="bi bi-plus-lg"></i>
+</a>
+{% endif %}
+
+<!-- ================= AI CHATBOT WIDGET ================= -->
+<button type="button" id="chatbot-fab" class="fab-chatbot" title="{% trans 'Ask the AI Assistant' %}">
+    <i class="bi bi-robot"></i>
+</button>
+<div id="chatbot-panel" class="chatbot-panel d-none">
+    <div class="chatbot-header">
+        <span><i class="bi bi-robot me-2"></i>{% trans "AI Assistant" %}</span>
+        <button type="button" id="chatbot-close" class="btn-close btn-close-white"></button>
+    </div>
+    <div class="chatbot-body" id="chatbot-messages">
+        <div class="chatbot-msg bot">{% trans "Hi! I can help with reporting issues, tracking complaints, emergency numbers, and more. Ask me anything." %}</div>
+    </div>
+    <div class="chatbot-chips" id="chatbot-chips">
+        <button type="button" class="chatbot-chip" data-question="How do I report an issue?">{% trans "How to report?" %}</button>
+        <button type="button" class="chatbot-chip" data-question="Emergency numbers">{% trans "Emergency numbers" %}</button>
+        {% if user.is_authenticated %}
+        <button type="button" class="chatbot-chip" data-question="How many issues have I reported?">{% trans "My reports" %}</button>
+        <button type="button" class="chatbot-chip" data-question="How many points do I have?">{% trans "My points" %}</button>
+        {% else %}
+        <button type="button" class="chatbot-chip" data-question="How many total complaints are there?">{% trans "Total complaints" %}</button>
+        {% endif %}
+    </div>
+    <form id="chatbot-form" class="chatbot-input-row">
+        <input type="text" id="chatbot-input" class="form-control form-control-sm" placeholder="{% trans 'Type in English or Tanglish...' %}" autocomplete="off">
+        <button type="submit" class="btn btn-sm btn-gov-primary"><i class="bi bi-send"></i></button>
+    </form>
+</div>
+
+<!-- ================= TOAST CONTAINER ================= -->
+<div id="gov-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3 gov-toast-container"></div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="gov-footer mt-5">
+    <div class="emergency-strip">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {% trans "In case of a life-threatening emergency, call 108 (Ambulance) / 101 (Fire) / 100 (Police) immediately." %}
+    </div>
+    <div class="container py-4">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <h6><span class="me-2">🏛️</span>{% trans "Kuraigal.TN" %}</h6>
+                <p class="small mb-2">{% trans "Citizen Civic Issue Reporting System — report local issues, track complaint progress, and build better communities together." %}</p>
+                <div class="d-flex gap-2 fs-5">
+                    <a href="#"><i class="bi bi-facebook"></i></a>
+                    <a href="#"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#"><i class="bi bi-instagram"></i></a>
+                    <a href="#"><i class="bi bi-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <h6>{% trans "Quick Links" %}</h6>
+                <ul class="list-unstyled small">
+                    <li><a href="{% url 'issue_list' %}">{% trans "All Issues" %}</a></li>
+                    <li><a href="{% url 'heatmap' %}">{% trans "Heatmap" %}</a></li>
+                    <li><a href="{% url 'analytics' %}">{% trans "Analytics" %}</a></li>
+                    <li><a href="{% url 'leaderboard' %}">{% trans "Leaderboard" %}</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-md-3">
+                <h6>{% trans "Citizen Services" %}</h6>
+                <ul class="list-unstyled small">
+                    <li><a href="{% url 'nearby_issues' %}">{% trans "Nearby Issues" %}</a></li>
+                    {% if user.is_authenticated %}<li><a href="{% url 'report_issue' %}">{% trans "Report an Issue" %}</a></li>{% else %}<li><a href="{% url 'login' %}">{% trans "Report an Issue" %}</a></li>{% endif %}
+                    <li><a href="{% url 'issue_list' %}?emergency=1">{% trans "Emergency Reports" %}</a></li>
+                    <li><a href="{% url 'my_profile' %}">{% trans "My Profile" %}</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h6>{% trans "Contact" %}</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-telephone-fill me-2"></i>1913 {% trans "Citizen Helpline" %}</li>
+                    <li><i class="bi bi-envelope-fill me-2"></i>support@neighborhoodtracker.gov.in</li>
+                    <li><i class="bi bi-geo-alt-fill me-2"></i>{% trans "Chennai, Tamil Nadu, India" %}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom d-flex flex-wrap justify-content-between align-items-center">
+            <span>&copy; {% now "Y" %} {% trans "Kuraigal.TN" %} · {% trans "Government of Tamil Nadu Smart City Initiative" %}</span>
+            <span>{% trans "Privacy Policy" %} · {% trans "Terms & Conditions" %} · {% trans "Accessibility" %}</span>
+        </div>
+    </div>
+</footer>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/main.js"></script>
+<script>
+    var themeBtn = document.getElementById('theme-toggle');
+    function updateThemeIcon() {
+        var theme = document.documentElement.getAttribute('data-bs-theme');
+        themeBtn.innerHTML = theme === 'dark' ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
+    }
+    updateThemeIcon();
+    themeBtn.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-bs-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', next);
+        localStorage.setItem('theme', next);
+        updateThemeIcon();
+    });
+</script>
+
+<script>
+    // ---------------- AI Chatbot widget ----------------
+    (function () {
+        var fab = document.getElementById('chatbot-fab');
+        var panel = document.getElementById('chatbot-panel');
+        var closeBtn = document.getElementById('chatbot-close');
+        var form = document.getElementById('chatbot-form');
+        var input = document.getElementById('chatbot-input');
+        var messages = document.getElementById('chatbot-messages');
+        var chips = document.getElementById('chatbot-chips');
+
+        function addMessage(text, who) {
+            var div = document.createElement('div');
+            div.className = 'chatbot-msg ' + who;
+            div.textContent = text;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function showTyping() {
+            var div = document.createElement('div');
+            div.className = 'chatbot-msg bot';
+            div.id = 'chatbot-typing-indicator';
+            div.innerHTML = '<span class="chatbot-typing"><span></span><span></span><span></span></span>';
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function hideTyping() {
+            var el = document.getElementById('chatbot-typing-indicator');
+            if (el) el.remove();
+        }
+
+        function sendMessage(text) {
+            if (!text) return;
+            addMessage(text, 'user');
+            showTyping();
+
+            var formData = new URLSearchParams();
+            formData.append('message', text);
+
+            fetch("{% url 'chatbot' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                hideTyping();
+                addMessage(data.reply, 'bot');
+            })
+            .catch(function () {
+                hideTyping();
+                addMessage("{% trans 'Sorry, something went wrong. Please try again.' %}", 'bot');
+            });
+        }
+
+        fab.addEventListener('click', function () {
+            panel.classList.toggle('d-none');
+            if (!panel.classList.contains('d-none')) {
+                input.focus();
+            }
+        });
+        closeBtn.addEventListener('click', function () {
+            panel.classList.add('d-none');
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var text = input.value.trim();
+            input.value = '';
+            sendMessage(text);
+        });
+
+        if (chips) {
+            chips.addEventListener('click', function (e) {
+                var chip = e.target.closest('.chatbot-chip');
+                if (!chip) return;
+                sendMessage(chip.getAttribute('data-question'));
+            });
+        }
+    })();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

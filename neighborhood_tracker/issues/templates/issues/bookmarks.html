@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "My Bookmarks" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-bookmark-star-fill"></i>{% trans "My Bookmarks" %}</h2>
+        <p>{% trans "Issues you've saved to follow their progress." %}</p>
+    </div>
+
+    <div class="row g-3">
+        {% for issue in bookmarked %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card issue-card h-100 {% if issue.is_emergency %}emergency{% endif %} fade-in-up">
+                {% if issue.image %}
+                    <img src="{{ issue.image.url }}" class="card-img-top" alt="{{ issue.title }}" loading="lazy">
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        {% if issue.is_emergency %}<span class="badge emergency-badge badge-pill">🚨 {% trans "Emergency" %}</span>{% endif %}
+                        <span class="badge status-badge-{{ issue.status }} badge-pill">{{ issue.get_status_display }}</span>
+                    </div>
+                    <div class="small text-muted mb-1"><i class="bi bi-upc-scan me-1"></i>{{ issue.tracking_number }}</div>
+                    <h6 class="card-title"><a href="{% url 'issue_detail' issue.pk %}">{{ issue.title }}</a></h6>
+                    <p class="card-text small text-muted mb-0"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"Location on map" }}</p>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center bg-transparent">
+                    <small class="text-muted"><i class="bi bi-hand-thumbs-up me-1"></i>{{ issue.votes }}</small>
+                    <form method="post" action="{% url 'toggle_bookmark' issue.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Remove bookmark' %}">
+                            <i class="bi bi-bookmark-x"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-bookmark"></i></div>
+                <p>{% trans "You haven't bookmarked any issues yet." %}</p>
+                <a href="{% url 'issue_list' %}" class="btn btn-gov-primary btn-sm">{% trans "Browse Issues" %}</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

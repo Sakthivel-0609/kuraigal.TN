@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "All Issues" %}{% endblock %}
+{% block content %}
+
+<div class="container">
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="section-title mb-1"><i class="bi bi-list-check me-2"></i>{% trans "Reported Issues" %}</h2>
+            <p class="section-subtitle mb-0">{% trans "Browse, filter and track civic complaints reported by citizens" %}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="btn-group" role="group" aria-label="{% trans 'View toggle' %}">
+                <button type="button" id="view-grid-btn" class="btn btn-gov-primary btn-sm"><i class="bi bi-grid-3x3-gap-fill me-1"></i>{% trans "Grid" %}</button>
+                <button type="button" id="view-map-btn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-map me-1"></i>{% trans "Map" %}</button>
+            </div>
+            {% if user.is_authenticated %}
+                <a href="{% url 'report_issue' %}" class="btn btn-gov-primary btn-sm"><i class="bi bi-plus-circle me-1"></i>{% trans "Report Issue" %}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ================= FILTER BAR ================= -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-search me-1"></i>{% trans "Search" %}</label>
+                    <input type="text" name="q" class="form-control" placeholder="{% trans 'Search issues...' %}" value="{{ search }}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-tags me-1"></i>{% trans "Category" %}</label>
+                    <select name="category" class="form-select" onchange="this.form.submit()">
+                        <option value="">{% trans "All Categories" %}</option>
+                        {% for c in categories %}
+                            <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-flag me-1"></i>{% trans "Status" %}</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">{% trans "All Statuses" %}</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-geo-alt me-1"></i>{% trans "Area" %}</label>
+                    <select name="area" class="form-select" onchange="this.form.submit()">
+                        <option value="">{% trans "All Areas" %}</option>
+                        {% for a in areas %}
+                            <option value="{{ a }}" {% if selected_area == a %}selected{% endif %}>{{ a|truncatechars:28 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-building me-1"></i>{% trans "Department" %}</label>
+                    <select name="department" class="form-select" onchange="this.form.submit()">
+                        <option value="">{% trans "All Departments" %}</option>
+                        {% for d in departments %}
+                            <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.icon }} {{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if wards %}
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-signpost me-1"></i>{% trans "Ward" %}</label>
+                    <select name="ward" class="form-select" onchange="this.form.submit()">
+                        <option value="">{% trans "All Wards" %}</option>
+                        {% for w in wards %}
+                            <option value="{{ w }}" {% if selected_ward == w %}selected{% endif %}>{{ w }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1"><i class="bi bi-sort-down me-1"></i>{% trans "Sort" %}</label>
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                        <option value="recent" {% if sort == 'recent' %}selected{% endif %}>{% trans "Most Recent" %}</option>
+                        <option value="votes" {% if sort == 'votes' %}selected{% endif %}>{% trans "Most Upvoted" %}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-1 d-flex align-items-center pt-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="emergency" value="1" id="emergencyCheck"
+                               {% if emergency_only %}checked{% endif %} onchange="this.form.submit()">
+                        <label class="form-check-label small" for="emergencyCheck">🚨</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-12 d-flex justify-content-end gap-2">
+                    {% if user.is_staff %}
+                    <a href="{% url 'export_issues_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary btn-sm mt-1">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i>{% trans "Export to Excel" %}
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'issue_list' %}" class="btn btn-outline-secondary btn-sm mt-1" title="{% trans 'Reset filters' %}"><i class="bi bi-arrow-counterclockwise me-1"></i>{% trans "Reset Filters" %}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= RESULT COUNT ================= -->
+    <p class="text-muted small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        {% blocktrans count counter=page_obj.paginator.count %}Showing {{ counter }} issue{% plural %}Showing {{ counter }} issues{% endblocktrans %}
+        {% if page_obj.paginator.num_pages > 1 %}
+            · {% blocktrans with current=page_obj.number total=page_obj.paginator.num_pages %}page {{ current }} of {{ total }}{% endblocktrans %}
+        {% endif %}
+    </p>
+
+    <!-- ================= MAP VIEW ================= -->
+    <div id="map-view" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
+        <div class="card-body">
+            <div id="issues-map"></div>
+            <div class="d-flex gap-3 mt-2 flex-wrap small text-muted">
+                <span><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#7a0d1a;"></span>{% trans "Emergency" %}</span>
+                <span><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#c22030;"></span>{% trans "Open" %}</span>
+                <span><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#b8860b;"></span>{% trans "In Progress" %}</span>
+                <span><span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:#157a3d;"></span>{% trans "Resolved" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ISSUE GRID ================= -->
+    <div id="grid-view" class="row g-3">
+        {% for issue in issues %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card issue-card h-100 {% if issue.is_emergency %}emergency{% endif %} fade-in-up">
+                {% if issue.image %}
+                    <img src="{{ issue.image.url }}" class="card-img-top" alt="{{ issue.title }}" loading="lazy">
+                {% else %}
+                    <div class="card-img-top d-flex align-items-center justify-content-center" style="background: var(--gov-bg); color: var(--gov-text-muted); height:170px;">
+                        <i class="bi bi-image fs-1"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        {% if issue.is_emergency %}<span class="badge emergency-badge badge-pill">🚨 {% if issue.emergency_type %}{{ issue.get_emergency_type_display }}{% else %}{% trans "Emergency" %}{% endif %}</span>{% endif %}
+                        {% if issue.escalated %}<span class="badge escalated-badge badge-pill"><i class="bi bi-arrow-up-circle me-1"></i>{% trans "Escalated" %}</span>{% endif %}
+                        <span class="badge status-badge-{{ issue.status }} badge-pill">{{ issue.get_status_display }}</span>
+                        <span class="badge badge-pill priority-badge-{{ issue.priority }}">{{ issue.get_priority_display }}</span>
+                        {% if issue.category %}<span class="badge bg-secondary badge-pill">{{ issue.category.icon }} {{ issue.category.name }}</span>{% endif %}
+                    </div>
+                    <div class="small text-muted mb-1"><i class="bi bi-upc-scan me-1"></i>{{ issue.tracking_number }}</div>
+                    <h5 class="card-title"><a href="{% url 'issue_detail' issue.pk %}">{{ issue.title }}</a></h5>
+                    <p class="card-text text-muted small">{{ issue.description|truncatewords:20 }}</p>
+                    <p class="card-text small text-muted"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"Location on map" }}</p>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center bg-transparent">
+                    <small class="text-muted"><i class="bi bi-hand-thumbs-up me-1"></i>{{ issue.votes }} · {% trans "by" %} {{ issue.display_reporter_name }}</small>
+                    <small class="text-muted">{{ issue.created_at|timesince }} {% trans "ago" %}</small>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                <p class="mb-2">{% trans "No issues found." %}</p>
+                {% if user.is_authenticated %}<a href="{% url 'report_issue' %}" class="btn btn-gov-primary btn-sm">{% trans "Report the first one" %}</a>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ================= PAGINATION ================= -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="{% trans 'Issue list pages' %}" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="{% trans 'Previous' %}">&laquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="{% trans 'Next' %}">&raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+    var gridView = document.getElementById('grid-view');
+    var mapView = document.getElementById('map-view');
+    var gridBtn = document.getElementById('view-grid-btn');
+    var mapBtn = document.getElementById('view-map-btn');
+    var map, markerCluster, mapInitialized = false;
+
+    var statusColors = { 'open': '#c22030', 'in_progress': '#b8860b', 'resolved': '#157a3d' };
+
+    function initMap() {
+        if (mapInitialized) return;
+        mapInitialized = true;
+
+        map = L.map('issues-map').setView([13.0827, 80.2707], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        markerCluster = L.markerClusterGroup();
+
+        var params = new URLSearchParams(window.location.search);
+        var url = "{% url 'issue_map_data' %}?" + params.toString();
+
+        fetch(url)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                data.forEach(function(issue) {
+                    var color = issue.is_emergency ? '#7a0d1a' : (statusColors[issue.status] || '#6c757d');
+                    var marker = L.circleMarker([issue.lat, issue.lng], {
+                        radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1
+                    });
+                    marker.bindPopup(
+                        '<strong>' + issue.category_icon + ' ' + issue.title + '</strong><br>' +
+                        issue.status_label +
+                        '<br><a href="' + issue.url + '">{% trans "View details" %} &rarr;</a>'
+                    );
+                    markerCluster.addLayer(marker);
+                });
+                map.addLayer(markerCluster);
+                if (data.length) {
+                    map.fitBounds(markerCluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
+                }
+            });
+    }
+
+    gridBtn.addEventListener('click', function() {
+        gridView.classList.remove('d-none');
+        mapView.classList.add('d-none');
+        gridBtn.classList.remove('btn-outline-secondary'); gridBtn.classList.add('btn-gov-primary');
+        mapBtn.classList.remove('btn-gov-primary'); mapBtn.classList.add('btn-outline-secondary');
+    });
+
+    mapBtn.addEventListener('click', function() {
+        gridView.classList.add('d-none');
+        mapView.classList.remove('d-none');
+        mapBtn.classList.remove('btn-outline-secondary'); mapBtn.classList.add('btn-gov-primary');
+        gridBtn.classList.remove('btn-gov-primary'); gridBtn.classList.add('btn-outline-secondary');
+        setTimeout(function() {
+            initMap();
+            if (map) map.invalidateSize();
+        }, 50);
+    });
+</script>
+{% endblock %}

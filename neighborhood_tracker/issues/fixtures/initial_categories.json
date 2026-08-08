@@ -1,0 +1,10 @@
+[
+    {"model": "issues.category", "pk": 1, "fields": {"name": "Pothole", "icon": "\ud83d\udd73\ufe0f", "department": 2}},
+    {"model": "issues.category", "pk": 2, "fields": {"name": "Garbage", "icon": "\ud83d\uddd1\ufe0f", "department": 10}},
+    {"model": "issues.category", "pk": 3, "fields": {"name": "Streetlight", "icon": "\ud83d\udca1", "department": 6}},
+    {"model": "issues.category", "pk": 4, "fields": {"name": "Water Leakage", "icon": "\ud83d\udca7", "department": 4}},
+    {"model": "issues.category", "pk": 5, "fields": {"name": "Drainage", "icon": "\ud83c\udf0a", "department": 5}},
+    {"model": "issues.category", "pk": 6, "fields": {"name": "Stray Animals", "icon": "\ud83d\udc15", "department": 9}},
+    {"model": "issues.category", "pk": 7, "fields": {"name": "Illegal Parking", "icon": "\ud83d\ude97", "department": 12}},
+    {"model": "issues.category", "pk": 8, "fields": {"name": "Other", "icon": "\u2757", "department": 1}}
+]

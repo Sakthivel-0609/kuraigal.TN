@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Activity Log" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-shield-lock-fill"></i>{% trans "Staff Activity Log" %}</h2>
+        <p>{% trans "Read-only accountability trail of staff actions - status changes, assignments, and moderation." %}</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Staff Member" %}</th>
+                            <th>{% trans "Action" %}</th>
+                            <th>{% trans "Related Issue" %}</th>
+                            <th>{% trans "Detail" %}</th>
+                            <th>{% trans "IP" %}</th>
+                            <th>{% trans "When" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td><i class="bi bi-person-badge me-1"></i>{{ log.actor.username|default:"—" }}</td>
+                            <td><span class="badge bg-secondary badge-pill">{{ log.get_action_display }}</span></td>
+                            <td>
+                                {% if log.issue %}
+                                    <a href="{% url 'issue_detail' log.issue.pk %}">{{ log.issue.tracking_number }}</a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="small text-muted">{{ log.detail|default:"—" }}</td>
+                            <td class="small text-muted">{{ log.ip_address|default:"—" }}</td>
+                            <td class="small text-muted">{{ log.created_at|timesince }} {% trans "ago" %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-muted text-center py-4">{% trans "No activity recorded yet." %}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

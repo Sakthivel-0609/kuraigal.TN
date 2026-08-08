@@ -1,0 +1,271 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ta\n"
+
+msgid "Neighborhood Issue Tracker"
+msgstr "பகுதி பிரச்சனை கண்காணிப்பான்"
+
+msgid "Kuraigal.TN"
+msgstr "Kuraigal.TN"
+
+msgid "Issues"
+msgstr "பிரச்சனைகள்"
+
+msgid "Heatmap"
+msgstr "வெப்ப வரைபடம்"
+
+msgid "Nearby"
+msgstr "அருகில்"
+
+msgid "Analytics"
+msgstr "பகுப்பாய்வு"
+
+msgid "Leaderboard"
+msgstr "தலைமை பட்டியல்"
+
+msgid "Report Issue"
+msgstr "பிரச்சனையை பதிவு செய்"
+
+msgid "Toggle dark mode"
+msgstr "இருள் பயன்முறை"
+
+msgid "Notifications"
+msgstr "அறிவிப்புகள்"
+
+msgid "Logout"
+msgstr "வெளியேறு"
+
+msgid "Login"
+msgstr "உள்நுழை"
+
+msgid "Sign Up"
+msgstr "பதிவு செய்"
+
+msgid "All Issues"
+msgstr "அனைத்து பிரச்சனைகள்"
+
+msgid "Reported Issues"
+msgstr "பதிவு செய்யப்பட்ட பிரச்சனைகள்"
+
+msgid "All Categories"
+msgstr "அனைத்து வகைகளும்"
+
+msgid "All Statuses"
+msgstr "அனைத்து நிலைகளும்"
+
+msgid "Most Recent"
+msgstr "சமீபத்தியவை"
+
+msgid "Most Upvoted"
+msgstr "அதிக ஆதரவு பெற்றவை"
+
+msgid "Emergency only"
+msgstr "அவசரம் மட்டும்"
+
+msgid "Search issues..."
+msgstr "பிரச்சனைகளை தேடு..."
+
+msgid "Emergency"
+msgstr "அவசரம்"
+
+msgid "by"
+msgstr "மூலம்"
+
+msgid "ago"
+msgstr "முன்பு"
+
+msgid "No issues found."
+msgstr "பிரச்சனைகள் எதுவும் இல்லை."
+
+msgid "Report the first one"
+msgstr "முதலாவதை பதிவு செய்"
+
+msgid "Report a New Issue"
+msgstr "புதிய பிரச்சனையை பதிவு செய்"
+
+msgid "Click on the map to mark exact location."
+msgstr "சரியான இடத்தை குறிக்க வரைபடத்தில் கிளிக் செய்யவும்."
+
+msgid "Title"
+msgstr "தலைப்பு"
+
+msgid "Description"
+msgstr "விளக்கம்"
+
+msgid "Category"
+msgstr "வகை"
+
+msgid "Address / Landmark"
+msgstr "முகவரி / அடையாளம்"
+
+msgid "Photo (optional)"
+msgstr "புகைப்படம் (விருப்பம்)"
+
+msgid "This is dangerous / needs urgent attention"
+msgstr "இது ஆபத்தானது / அவசர கவனம் தேவை"
+
+msgid "No location selected yet."
+msgstr "இன்னும் இடம் தேர்ந்தெடுக்கப்படவில்லை."
+
+msgid "Selected"
+msgstr "தேர்ந்தெடுக்கப்பட்டது"
+
+msgid "Possible duplicate complaints nearby"
+msgstr "அருகில் நகல் புகார்கள் இருக்கலாம்"
+
+msgid "Someone may have already reported this. Consider upvoting instead of creating a duplicate:"
+msgstr "இதை ஏற்கனவே யாராவது பதிவு செய்திருக்கலாம். நகல் உருவாக்குவதற்குப் பதிலாக ஆதரவு தெரிவிக்கவும்:"
+
+msgid "Submit Issue"
+msgstr "பிரச்சனையை சமர்ப்பி"
+
+msgid "Issue reported successfully. Thanks for helping the neighborhood!"
+msgstr "பிரச்சனை வெற்றிகரமாக பதிவு செய்யப்பட்டது. பகுதிக்கு உதவியதற்கு நன்றி!"
+
+msgid "reported by"
+msgstr "பதிவு செய்தவர்"
+
+msgid "Upvoted"
+msgstr "ஆதரிக்கப்பட்டது"
+
+msgid "Upvote"
+msgstr "ஆதரி"
+
+msgid "Export PDF"
+msgstr "PDF ஏற்றுமதி"
+
+msgid "Update Status"
+msgstr "நிலையை புதுப்பி"
+
+msgid "Issue Timeline"
+msgstr "பிரச்சனை காலவரிசை"
+
+msgid "Comments"
+msgstr "கருத்துகள்"
+
+msgid "No comments yet."
+msgstr "இன்னும் கருத்துகள் இல்லை."
+
+msgid "Post Comment"
+msgstr "கருத்தை இடு"
+
+msgid "to comment."
+msgstr "கருத்து தெரிவிக்க."
+
+msgid "Nearby Issues"
+msgstr "அருகிலுள்ள பிரச்சனைகள்"
+
+msgid "away"
+msgstr "தூரத்தில்"
+
+msgid "No other nearby issues."
+msgstr "வேறு அருகிலுள்ள பிரச்சனைகள் இல்லை."
+
+msgid "Issue Heatmap"
+msgstr "பிரச்சனை வெப்ப வரைபடம்"
+
+msgid "Darker/red zones show higher concentration of unresolved issues. Emergency issues are weighted higher."
+msgstr "அடர்த்தியான/சிவப்பு பகுதிகள் தீர்க்கப்படாத பிரச்சனைகளின் அதிக அடர்த்தியை காட்டுகின்றன. அவசர பிரச்சனைகளுக்கு அதிக முக்கியத்துவம்."
+
+msgid "Issues Near You"
+msgstr "உங்களுக்கு அருகிலுள்ள பிரச்சனைகள்"
+
+msgid "Allow location access to see complaints reported near you."
+msgstr "உங்களுக்கு அருகில் பதிவான புகார்களை காண இட அணுகலை அனுமதிக்கவும்."
+
+msgid "Use My Location"
+msgstr "எனது இருப்பிடத்தை பயன்படுத்து"
+
+msgid "No issues found near you."
+msgstr "உங்களுக்கு அருகில் பிரச்சனைகள் இல்லை."
+
+msgid "Could not get your location. Please allow location access."
+msgstr "உங்கள் இருப்பிடத்தைப் பெற முடியவில்லை. இட அணுகலை அனுமதிக்கவும்."
+
+msgid "Geolocation is not supported by your browser."
+msgstr "உங்கள் உலாவி இருப்பிட சேவையை ஆதரிக்கவில்லை."
+
+msgid "Analytics Dashboard"
+msgstr "பகுப்பாய்வு டாஷ்போர்டு"
+
+msgid "Export PDF Report"
+msgstr "PDF அறிக்கை ஏற்றுமதி"
+
+msgid "Total Issues"
+msgstr "மொத்த பிரச்சனைகள்"
+
+msgid "Resolved"
+msgstr "தீர்க்கப்பட்டது"
+
+msgid "Active Emergencies"
+msgstr "நடப்பு அவசரங்கள்"
+
+msgid "Resolution Rate"
+msgstr "தீர்வு விகிதம்"
+
+msgid "Category-wise"
+msgstr "வகை வாரியாக"
+
+msgid "Status-wise"
+msgstr "நிலை வாரியாக"
+
+msgid "Top Areas by Issue Count"
+msgstr "அதிக பிரச்சனைகள் கொண்ட பகுதிகள்"
+
+msgid "Area / Address"
+msgstr "பகுதி / முகவரி"
+
+msgid "Count"
+msgstr "எண்ணிக்கை"
+
+msgid "No area data yet."
+msgstr "இன்னும் பகுதி தரவு இல்லை."
+
+msgid "No notifications yet."
+msgstr "இன்னும் அறிவிப்புகள் இல்லை."
+
+msgid "Community Leaderboard"
+msgstr "சமூக தலைமை பட்டியல்"
+
+msgid "Top contributors ranked by community points."
+msgstr "சமூக புள்ளிகளின் அடிப்படையில் முதன்மை பங்களிப்பாளர்கள்."
+
+msgid "User"
+msgstr "பயனர்"
+
+msgid "Badge"
+msgstr "பட்டயம்"
+
+msgid "Points"
+msgstr "புள்ளிகள்"
+
+msgid "No contributors yet."
+msgstr "இன்னும் பங்களிப்பாளர்கள் இல்லை."
+
+msgid "My Profile"
+msgstr "எனது சுயவிவரம்"
+
+msgid "points"
+msgstr "புள்ளிகள்"
+
+msgid "Next badge"
+msgstr "அடுத்த பட்டயம்"
+
+msgid "Highest badge reached! 🎉"
+msgstr "மிக உயர்ந்த பட்டயம் அடையப்பட்டது! 🎉"
+
+msgid "My Reported Issues"
+msgstr "எனது பதிவு செய்யப்பட்ட பிரச்சனைகள்"
+
+msgid "You haven't reported any issues yet."
+msgstr "நீங்கள் இன்னும் எந்த பிரச்சனையையும் பதிவு செய்யவில்லை."
+
+msgid "Status updated."
+msgstr "நிலை புதுப்பிக்கப்பட்டது."
+
+msgid "Welcome! Your account has been created."
+msgstr "வரவேற்கிறோம்! உங்கள் கணக்கு உருவாக்கப்பட்டது."

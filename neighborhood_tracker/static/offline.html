@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offline - Kuraigal.TN</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    body {
+        font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
+        background: #f4f6f9;
+        color: #14202e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        text-align: center;
+        padding: 2rem;
+    }
+    .box { max-width: 420px; }
+    .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.4rem; margin-bottom: .5rem; color: #0b2545; }
+    p { color: #5c6b7a; line-height: 1.5; }
+    button {
+        margin-top: 1.5rem;
+        padding: .7rem 1.6rem;
+        background: #0b2545;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+    <div class="box">
+        <div class="icon">📡</div>
+        <h1>You're offline</h1>
+        <p>This page isn't available without an internet connection. Any issues you were viewing earlier may still be cached - try going back, or reconnect and reload.</p>
+        <button onclick="window.location.reload()">Try Again</button>
+    </div>
+</body>
+</html>

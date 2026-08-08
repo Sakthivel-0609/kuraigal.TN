@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Departments" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header">
+        <h2><i class="bi bi-building"></i>{% trans "Government Departments" %}</h2>
+        <p>{% trans "Every complaint is routed to the department responsible for resolving it. Contact them directly for urgent matters." %}</p>
+    </div>
+
+    <div class="row g-3">
+        {% for dept in departments %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 fade-in-up">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="fs-3">{{ dept.icon }}</span>
+                        <h5 class="section-title mb-0">{{ dept.name }}</h5>
+                    </div>
+                    <p class="small text-muted">{{ dept.description|default:"—" }}</p>
+
+                    <div class="d-flex gap-3 small text-muted mb-3">
+                        {% if dept.contact_phone %}<span><i class="bi bi-telephone-fill me-1"></i>{{ dept.contact_phone }}</span>{% endif %}
+                    </div>
+                    {% if dept.contact_email %}
+                    <div class="small text-muted mb-3"><i class="bi bi-envelope-fill me-1"></i>{{ dept.contact_email }}</div>
+                    {% endif %}
+
+                    <div class="row g-2 text-center">
+                        <div class="col-4">
+                            <div class="fw-bold">{{ dept.total_issue_count }}</div>
+                            <div class="small text-muted">{% trans "Total" %}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold" style="color: var(--gov-green);">{{ dept.resolved_issue_count }}</div>
+                            <div class="small text-muted">{% trans "Resolved" %}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold">{{ dept.resolution_rate }}%</div>
+                            <div class="small text-muted">{% trans "Rate" %}</div>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-navy" role="progressbar" style="width: {{ dept.resolution_rate }}%"></div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{% url 'issue_list' %}?department={{ dept.id }}" class="btn btn-outline-secondary btn-sm w-100">
+                        {% trans "View Complaints" %} <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-building"></i></div>
+                <p>{% trans "No departments configured yet." %}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

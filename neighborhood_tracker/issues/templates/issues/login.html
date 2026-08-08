@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Login" %}{% endblock %}
+{% block content %}
+<div class="container auth-wrap">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-5 col-lg-4">
+            <div class="auth-card">
+                <div class="text-center">
+                    <div class="auth-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                    <h2 class="section-title mb-1">{% trans "Citizen Login" %}</h2>
+                    <p class="section-subtitle mb-4">{% trans "Sign in to report and track civic issues." %}</p>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{% trans "Username" %}</label>
+                        <input type="text" name="username" class="form-control" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{% trans "Password" %}</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    {% if form.errors %}
+                        <p class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Invalid username or password." %}</p>
+                    {% endif %}
+                    <button type="submit" class="btn btn-gov-primary w-100 py-2 mt-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>{% trans "Login" %}
+                    </button>
+                </form>
+                <p class="text-center mt-3 mb-0 small">
+                    {% trans "No account?" %} <a href="{% url 'signup' %}" class="fw-semibold">{% trans "Sign up" %}</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

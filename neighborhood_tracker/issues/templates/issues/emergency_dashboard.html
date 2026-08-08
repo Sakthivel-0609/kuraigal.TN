@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Emergency Dashboard" %}{% endblock %}
+{% block content %}
+<div class="container">
+
+    <div class="page-header" style="background: linear-gradient(120deg, var(--gov-emergency) 0%, #4a0a12 100%);">
+        <h2><i class="bi bi-exclamation-triangle-fill"></i>{% trans "Emergency Dashboard" %}</h2>
+        <p>{% trans "Live view of all active emergencies across the city. This page auto-refreshes." %}</p>
+    </div>
+
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+        <i class="bi bi-telephone-fill fs-5"></i>
+        <div>{% trans "Life-threatening emergency?" %} <strong>{% trans "Call 108 (Ambulance), 101 (Fire), or 100 (Police) immediately." %}</strong></div>
+    </div>
+
+    <!-- ================= STATS ================= -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card bg-grad-red fade-in-up stagger-1">
+                <i class="bi bi-exclamation-octagon stat-icon"></i>
+                <div class="stat-number" data-counter="{{ active_count }}">0</div>
+                <div class="stat-label">{% trans "Active Emergencies" %}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card bg-grad-green fade-in-up stagger-2">
+                <i class="bi bi-check-circle stat-icon"></i>
+                <div class="stat-number" data-counter="{{ resolved_today }}">0</div>
+                <div class="stat-label">{% trans "Resolved Today" %}</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="small fw-semibold mb-2">{% trans "By Type" %}</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for row in by_type %}
+                        <span class="badge bg-secondary badge-pill">{{ row.label }}: {{ row.count }}</span>
+                    {% empty %}
+                        <span class="text-muted small">{% trans "No active emergencies right now." %}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAP ================= -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <div id="emergency-map"></div>
+        </div>
+    </div>
+
+    <!-- ================= LIST ================= -->
+    <h5 class="section-title mb-3"><i class="bi bi-list-ul me-2"></i>{% trans "Active Emergencies" %}</h5>
+    <div class="row g-3">
+        {% for issue in active_emergencies %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'issue_detail' issue.pk %}" class="text-decoration-none">
+                <div class="card issue-card h-100 emergency fade-in-up">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            <span class="badge emergency-badge badge-pill">🚨 {{ issue.get_emergency_type_display|default:"Emergency" }}</span>
+                            <span class="badge status-badge-{{ issue.status }} badge-pill">{{ issue.get_status_display }}</span>
+                        </div>
+                        <h6 class="card-title">{{ issue.title }}</h6>
+                        <p class="small text-muted mb-1"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"Location on map" }}</p>
+                        <p class="small text-muted mb-0"><i class="bi bi-clock me-1"></i>{{ issue.created_at|timesince }} {% trans "ago" %}
+                        {% if issue.department %} · {{ issue.department.icon }} {{ issue.department.name }}{% endif %}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-shield-check"></i></div>
+                <p>{% trans "No active emergencies. All clear!" %} ✅</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('emergency-map').setView([13.0827, 80.2707], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var emergencyPoints = [
+        {% for issue in active_emergencies %}
+            { lat: {{ issue.latitude }}, lng: {{ issue.longitude }}, title: "{{ issue.title|escapejs }}", url: "{% url 'issue_detail' issue.pk %}" },
+        {% endfor %}
+    ];
+
+    var bounds = [];
+    emergencyPoints.forEach(function(p) {
+        var marker = L.circleMarker([p.lat, p.lng], {
+            radius: 10, color: '#fff', weight: 2, fillColor: '#7a0d1a', fillOpacity: 1
+        }).addTo(map);
+        marker.bindPopup('<strong>' + p.title + '</strong><br><a href="' + p.url + '">{% trans "View details" %} &rarr;</a>');
+        bounds.push([p.lat, p.lng]);
+    });
+    if (bounds.length) {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+    }
+
+    // Auto-refresh every 60 seconds to keep the dashboard live.
+    setTimeout(function() { window.location.reload(); }, 60000);
+</script>
+{% endblock %}
