@@ -23,6 +23,10 @@
     <link rel="stylesheet" href="/static/css/style.css">
     {% block extra_head %}{% endblock %}
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
+
     <!-- PWA: installable app + theme color -->
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#0b2545">
@@ -66,7 +70,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark gov-navbar sticky-top">
     <div class="container">
         <a class="navbar-brand" href="{% url 'home' %}">
-            <span class="brand-emblem">🏛️</span>
+            <img src="/static/img/navbar-logo.png" alt="{% trans 'Kuraigal.TN' %}" class="brand-emblem-img">
             <span>
                 <span class="brand-title d-block">{% trans "Kuraigal.TN" %}</span>
                 <span class="brand-subtitle d-block">{% trans "Citizen Civic Issue Reporting System" %}</span>
@@ -224,7 +228,7 @@
     <div class="container py-4">
         <div class="row g-4">
             <div class="col-md-4">
-                <h6><span class="me-2">🏛️</span>{% trans "Kuraigal.TN" %}</h6>
+                <h6 class="d-flex align-items-center gap-2"><img src="/static/img/navbar-logo.png" alt="{% trans 'Kuraigal.TN' %}" style="width:28px; height:28px; object-fit:contain; background:#fff; border-radius:50%; padding:2px;">{% trans "Kuraigal.TN" %}</h6>
                 <p class="small mb-2">{% trans "Citizen Civic Issue Reporting System — report local issues, track complaint progress, and build better communities together." %}</p>
                 <div class="d-flex gap-2 fs-5">
                     <a href="#"><i class="bi bi-facebook"></i></a>

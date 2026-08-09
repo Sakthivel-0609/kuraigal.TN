@@ -112,6 +112,14 @@ a { text-decoration: none; }
     font-size: 1.2rem;
     box-shadow: var(--gov-shadow-sm);
 }
+.gov-navbar .brand-emblem-img {
+    width: 42px; height: 42px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 50%;
+    padding: 3px;
+    box-shadow: var(--gov-shadow-sm);
+}
 .gov-navbar .brand-title { font-weight: 700; font-size: 1.05rem; color: #fff; }
 .gov-navbar .brand-subtitle { font-size: 0.68rem; color: #b9cbe4; font-weight: 400; letter-spacing: .02em; }
 .gov-navbar .nav-link {
