@@ -83,7 +83,6 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}"><i class="bi bi-house-door me-1"></i>{% trans "Home" %}</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'issue_list' %}active{% endif %}" href="{% url 'issue_list' %}"><i class="bi bi-list-check me-1"></i>{% trans "Issues" %}</a></li>
-                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'heatmap' %}active{% endif %}" href="{% url 'heatmap' %}"><i class="bi bi-thermometer-half me-1"></i>{% trans "Heatmap" %}</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'nearby_issues' %}active{% endif %}" href="{% url 'nearby_issues' %}"><i class="bi bi-geo-alt me-1"></i>{% trans "Nearby" %}</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'analytics' %}"><i class="bi bi-bar-chart-line me-1"></i>{% trans "Analytics" %}</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'departments' %}active{% endif %}" href="{% url 'departments' %}"><i class="bi bi-building me-1"></i>{% trans "Departments" %}</a></li>
@@ -241,7 +240,6 @@
                 <h6>{% trans "Quick Links" %}</h6>
                 <ul class="list-unstyled small">
                     <li><a href="{% url 'issue_list' %}">{% trans "All Issues" %}</a></li>
-                    <li><a href="{% url 'heatmap' %}">{% trans "Heatmap" %}</a></li>
                     <li><a href="{% url 'analytics' %}">{% trans "Analytics" %}</a></li>
                     <li><a href="{% url 'leaderboard' %}">{% trans "Leaderboard" %}</a></li>
                 </ul>
