@@ -16,11 +16,36 @@
                         {% if issue.category %}<span class="badge bg-secondary badge-pill">{{ issue.category.icon }} {{ issue.category.name }}</span>{% endif %}
                     </div>
                     <h2 class="section-title">{{ issue.title }}</h2>
-                    <p class="mb-1 d-flex flex-wrap gap-1 align-items-center">
+                    <p class="mb-3">
                         <span class="badge bg-navy badge-pill"><i class="bi bi-upc-scan me-1"></i>{{ issue.tracking_number }}</span>
-                        {% if issue.department %}<span class="badge bg-secondary badge-pill">{{ issue.department.icon }} {{ issue.department.name }}</span>{% endif %}
-                        {% if issue.assigned_officer %}<span class="badge bg-secondary badge-pill"><i class="bi bi-person-badge me-1"></i>{{ issue.assigned_officer.username }}</span>{% endif %}
                     </p>
+
+                    <!-- Status & Assignment - read-only for everyone, editable only by admin below -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-4">
+                            <div class="p-2 rounded-3 h-100" style="background: var(--gov-bg); border: 1px solid var(--gov-border);">
+                                <div class="small text-muted mb-1"><i class="bi bi-flag me-1"></i>{% trans "Status" %}</div>
+                                <div class="fw-semibold small"><span class="badge status-badge-{{ issue.status }} badge-pill">{{ issue.get_status_display }}</span></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div class="p-2 rounded-3 h-100" style="background: var(--gov-bg); border: 1px solid var(--gov-border);">
+                                <div class="small text-muted mb-1"><i class="bi bi-building me-1"></i>{% trans "Department Handling" %}</div>
+                                <div class="fw-semibold small">
+                                    {% if issue.department %}{{ issue.department.icon }} {{ issue.department.name }}{% else %}<span class="text-muted">{% trans "Not yet assigned" %}</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div class="p-2 rounded-3 h-100" style="background: var(--gov-bg); border: 1px solid var(--gov-border);">
+                                <div class="small text-muted mb-1"><i class="bi bi-person-badge me-1"></i>{% trans "Officer In-Charge" %}</div>
+                                <div class="fw-semibold small">
+                                    {% if issue.assigned_officer %}{{ issue.assigned_officer.username }}{% else %}<span class="text-muted">{% trans "Not yet assigned" %}</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <p class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"See map below" }} · {% trans "reported by" %} {{ issue.display_reporter_name }} · {{ issue.created_at|timesince }} {% trans "ago" %}</p>
 
                     {% if issue.completion_image %}
