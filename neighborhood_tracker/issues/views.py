@@ -832,8 +832,12 @@ def analytics_dashboard(request):
     return render(request, 'issues/analytics.html', context)
 
 
+@login_required
 def analytics_pdf(request):
-    """Export a simple analytics summary as PDF (requires reportlab)."""
+    """Export a simple analytics summary as PDF (requires reportlab). Staff/admin only."""
+    if not request.user.is_staff:
+        messages.error(request, _("You don't have permission to export this report."))
+        return redirect('analytics')
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.pdfgen import canvas

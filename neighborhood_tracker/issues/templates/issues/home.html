@@ -176,13 +176,6 @@
                 </a>
             </div>
             <div class="col-6 col-md-4 col-lg-2">
-                <a href="{% url 'heatmap' %}" class="service-card">
-                    <div class="service-icon"><i class="bi bi-map-fill"></i></div>
-                    <div class="service-title">{% trans "Heatmap" %}</div>
-                    <div class="service-desc">{% trans "Complaint density map" %}</div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
                 <a href="{% url 'analytics' %}" class="service-card">
                     <div class="service-icon"><i class="bi bi-graph-up-arrow"></i></div>
                     <div class="service-title">{% trans "Analytics" %}</div>
@@ -203,6 +196,7 @@
                     <div class="service-desc">{% trans "Your reports & points" %}</div>
                 </a>
             </div>
+            {% if user.is_staff %}
             <div class="col-6 col-md-4 col-lg-2">
                 <a href="{% url 'analytics_pdf' %}" class="service-card">
                     <div class="service-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div>
@@ -210,6 +204,7 @@
                     <div class="service-desc">{% trans "Export as PDF" %}</div>
                 </a>
             </div>
+            {% endif %}
             <div class="col-6 col-md-4 col-lg-2">
                 <a href="{% url 'notifications' %}" class="service-card">
                     <div class="service-icon"><i class="bi bi-bell-fill"></i></div>
