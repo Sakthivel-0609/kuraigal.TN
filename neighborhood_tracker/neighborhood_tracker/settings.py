@@ -194,6 +194,7 @@ if EMAIL_HOST_PASSWORD:
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+    EMAIL_TIMEOUT = 10  # seconds - fail fast instead of hanging the whole request if Gmail is slow/unreachable
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
