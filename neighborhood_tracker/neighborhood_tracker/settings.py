@@ -108,6 +108,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # WhiteNoise serves static files directly from Django in production (Render/Railway
 # don't run a separate nginx/Apache) - compressed + hashed filenames for caching.
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
