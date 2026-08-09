@@ -261,7 +261,7 @@ def issue_detail(request, pk):
         'can_rate_officer': can_rate_officer,
         'est_resolution_days': est_resolution_days,
     }
-    if request.user.is_staff:
+    if request.user.is_superuser:
         context['all_departments'] = Department.objects.all()
         context['staff_users'] = User.objects.filter(is_staff=True).order_by('username')
     return render(request, 'issues/issue_detail.html', context)
@@ -497,9 +497,12 @@ def update_status(request, pk):
 # ------------------------------------------------------- officer assignment
 @login_required
 def assign_officer(request, pk):
-    """Staff-only: assign (or reassign) an officer to an issue."""
+    """Admin-only: assign (or reassign) an officer to an issue."""
     issue = get_object_or_404(Issue, pk=pk)
-    if request.user.is_staff and request.method == 'POST':
+    if not request.user.is_superuser:
+        messages.error(request, _("Only administrators can assign officers."))
+        return redirect('issue_detail', pk=issue.pk)
+    if request.method == 'POST':
         officer_id = request.POST.get('officer')
         if officer_id:
             officer = get_object_or_404(User, pk=officer_id, is_staff=True)
@@ -522,9 +525,12 @@ def assign_officer(request, pk):
 
 @login_required
 def assign_department(request, pk):
-    """Staff-only: reassign an issue to a different department."""
+    """Admin-only: reassign an issue to a different department."""
     issue = get_object_or_404(Issue, pk=pk)
-    if request.user.is_staff and request.method == 'POST':
+    if not request.user.is_superuser:
+        messages.error(request, _("Only administrators can reassign departments."))
+        return redirect('issue_detail', pk=issue.pk)
+    if request.method == 'POST':
         department_id = request.POST.get('department')
         issue.department_id = department_id or None
         issue.save(update_fields=['department'])
