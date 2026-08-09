@@ -891,59 +891,187 @@ def analytics_pdf(request):
 
 
 def _build_issue_pdf_bytes(request, issue):
-    """Builds the single-issue PDF (with embedded QR code) and returns raw bytes.
+    """Builds an official-style Government of Tamil Nadu Citizen Grievance
+    Acknowledgement Receipt for a single complaint, and returns raw PDF bytes.
     Shared by the download view (issue_pdf) and the email-confirmation sender."""
     from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
     from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+    )
     from reportlab.lib.utils import ImageReader
     import io
-    import textwrap
+    import os
+    from django.conf import settings
+
+    NAVY = colors.HexColor('#0B2545')
+    GOLD = colors.HexColor('#B8860B')
+    LIGHT_BG = colors.HexColor('#F4F6F9')
+    GRAY = colors.HexColor('#5C6B7A')
+
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='GovHeaderTitle', fontName='Helvetica-Bold', fontSize=13,
+                               textColor=NAVY, alignment=TA_CENTER, leading=16))
+    styles.add(ParagraphStyle(name='GovHeaderSub', fontName='Helvetica', fontSize=9.5,
+                               textColor=GRAY, alignment=TA_CENTER, leading=12))
+    styles.add(ParagraphStyle(name='DocTitle', fontName='Helvetica-Bold', fontSize=12,
+                               textColor=colors.white, alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name='FieldLabel', fontName='Helvetica-Bold', fontSize=8.5,
+                               textColor=GRAY, leading=11))
+    styles.add(ParagraphStyle(name='FieldValue', fontName='Helvetica', fontSize=9.5,
+                               textColor=colors.HexColor('#1a1a1a'), leading=12.5))
+    styles.add(ParagraphStyle(name='SectionHeading', fontName='Helvetica-Bold', fontSize=10.5,
+                               textColor=NAVY, leading=13, spaceBefore=8, spaceAfter=4))
+    styles.add(ParagraphStyle(name='BodyText9', fontName='Helvetica', fontSize=9.5,
+                               textColor=colors.HexColor('#1a1a1a'), leading=13.5))
+    styles.add(ParagraphStyle(name='Disclaimer', fontName='Helvetica-Oblique', fontSize=7.5,
+                               textColor=GRAY, alignment=TA_CENTER, leading=10))
+
+    story = []
+
+    # ---------------------------------------------------------------- header
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'icon-192.png')
+    logo_flowable = RLImage(logo_path, width=1.7 * cm, height=1.7 * cm) if os.path.exists(logo_path) else Spacer(1.7 * cm, 1.7 * cm)
+
+    header_text = [
+        Paragraph("GOVERNMENT OF TAMIL NADU", styles['GovHeaderTitle']),
+        Paragraph("Kuraigal.TN — Citizen Grievance Management Portal", styles['GovHeaderSub']),
+        Paragraph(issue.department.name if issue.department else "Municipal Administration", styles['GovHeaderSub']),
+    ]
+    header_table = Table([[logo_flowable, header_text]], colWidths=[2.2 * cm, 14.8 * cm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 0.15 * cm))
+    story.append(Table([['']], colWidths=[17 * cm], rowHeights=[0.06 * cm],
+                        style=TableStyle([('BACKGROUND', (0, 0), (-1, -1), NAVY)])))
+    story.append(Spacer(1, 0.35 * cm))
+
+    # ------------------------------------------------------------ doc title
+    story.append(Table([[Paragraph("CITIZEN GRIEVANCE ACKNOWLEDGEMENT RECEIPT", styles['DocTitle'])]],
+                        colWidths=[17 * cm],
+                        style=TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, -1), NAVY),
+                            ('TOPPADDING', (0, 0), (-1, -1), 7), ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+                        ])))
+    story.append(Spacer(1, 0.4 * cm))
+
+    # -------------------------------------------------- tracking number box
+    tracking_box = Table(
+        [[Paragraph("COMPLAINT / TRACKING NUMBER", ParagraphStyle(
+            'tnlabel', fontName='Helvetica-Bold', fontSize=8.5, textColor=GOLD, alignment=TA_CENTER))],
+         [Paragraph(issue.tracking_number, ParagraphStyle(
+             'tnvalue', fontName='Helvetica-Bold', fontSize=20, textColor=NAVY, alignment=TA_CENTER))]],
+        colWidths=[17 * cm],
+        style=TableStyle([
+            ('BOX', (0, 0), (-1, -1), 1.2, GOLD),
+            ('BACKGROUND', (0, 0), (-1, -1), LIGHT_BG),
+            ('TOPPADDING', (0, 0), (-1, 0), 6), ('BOTTOMPADDING', (0, 0), (-1, 0), 2),
+            ('TOPPADDING', (0, 1), (-1, 1), 2), ('BOTTOMPADDING', (0, 1), (-1, 1), 8),
+        ])
+    )
+    story.append(tracking_box)
+    story.append(Spacer(1, 0.4 * cm))
+
+    # -------------------------------------------------------- details grid
+    def field(label, value):
+        return [Paragraph(label.upper(), styles['FieldLabel']), Paragraph(str(value) if value else '—', styles['FieldValue'])]
+
+    left_col = [
+        field("Complaint Title", issue.title),
+        field("Category", issue.category.name if issue.category else '—'),
+        field("Priority", issue.get_priority_display()),
+        field("Reported By", issue.display_reporter_name),
+    ]
+    right_col = [
+        field("Status", issue.get_status_display()),
+        field("Department", issue.department.name if issue.department else 'Not yet assigned'),
+        field("Officer In-Charge", issue.assigned_officer.username if issue.assigned_officer else 'Not yet assigned'),
+        field("Date &amp; Time of Report", issue.created_at.strftime('%d-%m-%Y %I:%M %p')),
+    ]
+
+    grid_rows = []
+    for l, r in zip(left_col, right_col):
+        grid_rows.append([l[0], l[1], r[0], r[1]])
+    details_table = Table(grid_rows, colWidths=[3.3 * cm, 5.2 * cm, 3.3 * cm, 5.2 * cm])
+    details_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LINEBELOW', (0, 0), (-1, -1), 0.4, colors.HexColor('#E3E8EE')),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(details_table)
+    story.append(Spacer(1, 0.3 * cm))
+
+    # ------------------------------------------------------------ location
+    loc_table = Table([[
+        field("Address / Landmark", issue.address or 'See coordinates')[0],
+        field("Address / Landmark", issue.address or 'See coordinates')[1],
+        field("GPS Coordinates", f"{issue.latitude:.5f}, {issue.longitude:.5f}")[0],
+        field("GPS Coordinates", f"{issue.latitude:.5f}, {issue.longitude:.5f}")[1],
+    ]], colWidths=[3.3 * cm, 5.2 * cm, 3.3 * cm, 5.2 * cm])
+    loc_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LINEBELOW', (0, 0), (-1, -1), 0.4, colors.HexColor('#E3E8EE')),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(loc_table)
+    story.append(Spacer(1, 0.5 * cm))
+
+    # -------------------------------------------------------- description
+    story.append(Paragraph("COMPLAINT DESCRIPTION", styles['SectionHeading']))
+    desc_box = Table([[Paragraph(issue.description, styles['BodyText9'])]], colWidths=[17 * cm])
+    desc_box.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor('#E3E8EE')),
+        ('BACKGROUND', (0, 0), (-1, -1), LIGHT_BG),
+        ('TOPPADDING', (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    story.append(desc_box)
+    story.append(Spacer(1, 0.5 * cm))
+
+    # ------------------------------------------------------------- QR + note
+    qr_buf = _generate_qr_image(request, issue)
+    qr_flowable = RLImage(qr_buf, width=2.6 * cm, height=2.6 * cm) if qr_buf else Spacer(2.6 * cm, 2.6 * cm)
+    note_text = Paragraph(
+        f"Scan the QR code to track live status of this complaint online, or visit "
+        f"<b>{request.build_absolute_uri(issue.get_absolute_url())}</b>. "
+        f"Please quote the tracking number <b>{issue.tracking_number}</b> in all future correspondence "
+        f"regarding this complaint.", styles['BodyText9']
+    )
+    qr_row = Table([[qr_flowable, note_text]], colWidths=[3 * cm, 14 * cm])
+    qr_row.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+    story.append(qr_row)
+    story.append(Spacer(1, 0.6 * cm))
+
+    # --------------------------------------------------------------- footer
+    story.append(Table([['']], colWidths=[17 * cm], rowHeights=[0.02 * cm],
+                        style=TableStyle([('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#E3E8EE'))])))
+    story.append(Spacer(1, 0.2 * cm))
+    story.append(Paragraph(
+        "This is a computer-generated acknowledgement receipt and does not require a physical signature or seal. "
+        "For emergency assistance, call 108 (Ambulance) / 101 (Fire) / 100 (Police).",
+        styles['Disclaimer']
+    ))
+    story.append(Paragraph(
+        f"Generated by Kuraigal.TN on {issue.created_at.strftime('%d-%m-%Y')} — Government Smart City Citizen Grievance Management Portal",
+        styles['Disclaimer']
+    ))
 
     buf = io.BytesIO()
-    p = canvas.Canvas(buf, pagesize=A4)
-    width, height = A4
-    y = height - 2 * cm
-
-    qr_image = _generate_qr_image(request, issue)
-    if qr_image:
-        p.drawImage(ImageReader(qr_image), width - 4.2 * cm, height - 4.2 * cm, 2.8 * cm, 2.8 * cm)
-
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(2 * cm, y, issue.title[:70])
-    y -= 0.7 * cm
-
-    p.setFont("Helvetica-Bold", 11)
-    p.setFillColorRGB(0.05, 0.15, 0.27)
-    p.drawString(2 * cm, y, f"Tracking No: {issue.tracking_number}")
-    p.setFillColorRGB(0, 0, 0)
-    y -= 0.9 * cm
-
-    p.setFont("Helvetica", 10)
-    for line in [
-        f"Status: {issue.get_status_display()}",
-        f"Category: {issue.category.name if issue.category else '-'}",
-        f"Emergency: {'Yes' if issue.is_emergency else 'No'}",
-        f"Reported by: {issue.reported_by.username}",
-        f"Address: {issue.address or '-'}",
-        f"Coordinates: {issue.latitude}, {issue.longitude}",
-        f"Upvotes: {issue.upvote_count()}",
-        f"Reported at: {issue.created_at.strftime('%Y-%m-%d %H:%M')}",
-    ]:
-        p.drawString(2 * cm, y, line)
-        y -= 0.6 * cm
-
-    y -= 0.4 * cm
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(2 * cm, y, "Description")
-    y -= 0.6 * cm
-    p.setFont("Helvetica", 10)
-    for wrapped in textwrap.wrap(issue.description, 95):
-        p.drawString(2 * cm, y, wrapped)
-        y -= 0.5 * cm
-
-    p.showPage()
-    p.save()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        topMargin=1.6 * cm, bottomMargin=1.6 * cm, leftMargin=2 * cm, rightMargin=2 * cm,
+        title=f"Complaint Receipt - {issue.tracking_number}",
+    )
+    doc.build(story)
+    buf.seek(0)
     return buf.getvalue()
 
 
