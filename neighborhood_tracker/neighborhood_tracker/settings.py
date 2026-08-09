@@ -118,6 +118,38 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ---------------------------------------------------------------------------
+# Logging - Django's default config only prints tracebacks to console when
+# DEBUG=True, which means production errors (DEBUG=False) are normally
+# invisible in server logs. This makes 500 errors show their full traceback
+# in Render/Railway/any host's log viewer regardless of DEBUG.
+# ---------------------------------------------------------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'issue_list'
 LOGOUT_REDIRECT_URL = 'issue_list'
