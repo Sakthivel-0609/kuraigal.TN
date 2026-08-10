@@ -26,7 +26,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'issues',
 ]
 
@@ -107,17 +109,53 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # WhiteNoise serves static files directly from Django in production (Render/Railway
 # don't run a separate nginx/Apache) - compressed + hashed filenames for caching.
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ---------------------------------------------------------------------------
+# Media storage (uploaded photos) - Render's filesystem is EPHEMERAL, meaning
+# any file saved locally (issue photos, completion photos) is lost on the
+# next deploy or restart. Cloudinary provides free, permanent cloud storage
+# for these uploads instead.
+#
+# Setup: create a free account at https://cloudinary.com, then from your
+# Cloudinary Dashboard copy the Cloud Name, API Key, and API Secret into
+# these three environment variables on Render:
+#   DJANGO_CLOUDINARY_CLOUD_NAME
+#   DJANGO_CLOUDINARY_API_KEY
+#   DJANGO_CLOUDINARY_API_SECRET
+#
+# Until these are set, uploads fall back to local disk storage - fine for
+# local development, but photos won't survive a Render redeploy.
+# ---------------------------------------------------------------------------
+CLOUDINARY_CLOUD_NAME = os.environ.get('DJANGO_CLOUDINARY_CLOUD_NAME', '')
+CLOUDINARY_API_KEY = os.environ.get('DJANGO_CLOUDINARY_API_KEY', '')
+CLOUDINARY_API_SECRET = os.environ.get('DJANGO_CLOUDINARY_API_SECRET', '')
+
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET,
+    }
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

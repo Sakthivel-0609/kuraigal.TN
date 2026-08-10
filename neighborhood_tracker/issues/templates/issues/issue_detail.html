@@ -49,25 +49,43 @@
                     <p class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ issue.address|default:"See map below" }} · {% trans "reported by" %} {{ issue.display_reporter_name }} · {{ issue.created_at|timesince }} {% trans "ago" %}</p>
 
                     {% if issue.completion_image %}
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <div class="position-relative">
-                                    <span class="badge bg-secondary badge-pill position-absolute top-0 start-0 m-2">{% trans "BEFORE" %}</span>
-                                    {% if issue.image %}
-                                        <img src="{{ issue.image.url }}" class="img-fluid rounded-4" style="height: 260px; width:100%; object-fit:cover;" alt="{% trans 'Before' %}" loading="lazy">
-                                    {% else %}
-                                        <div class="rounded-4 d-flex align-items-center justify-content-center" style="height:260px; background: var(--gov-bg);"><span class="text-muted small">{% trans "No photo provided" %}</span></div>
-                                    {% endif %}
-                                </div>
+                        <div class="btn-group mb-2" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-secondary photo-toggle-btn" data-target="photo-oldest">
+                                <i class="bi bi-clock-history me-1"></i>{% trans "Oldest" %} — {% trans "Citizen's Photo" %}
+                            </button>
+                            <button type="button" class="btn btn-sm btn-gov-primary photo-toggle-btn active" data-target="photo-newest">
+                                <i class="bi bi-check2-circle me-1"></i>{% trans "Newest" %} — {% trans "Officer's Completion Photo" %}
+                            </button>
+                        </div>
+                        <div class="position-relative mb-2">
+                            <div id="photo-oldest" class="photo-panel d-none">
+                                <span class="badge bg-secondary badge-pill position-absolute top-0 start-0 m-2" style="z-index:2;">{% trans "REPORTED" %}</span>
+                                {% if issue.image %}
+                                    <img src="{{ issue.image.url }}" class="img-fluid rounded-4" style="height: 320px; width:100%; object-fit:cover;" alt="{% trans 'Original photo submitted by citizen' %}" loading="lazy">
+                                {% else %}
+                                    <div class="rounded-4 d-flex align-items-center justify-content-center" style="height:320px; background: var(--gov-bg);"><span class="text-muted small">{% trans "No photo provided" %}</span></div>
+                                {% endif %}
                             </div>
-                            <div class="col-6">
-                                <div class="position-relative">
-                                    <span class="badge bg-success badge-pill position-absolute top-0 start-0 m-2">{% trans "AFTER" %}</span>
-                                    <img src="{{ issue.completion_image.url }}" class="img-fluid rounded-4" style="height: 260px; width:100%; object-fit:cover;" alt="{% trans 'After' %}" loading="lazy">
-                                </div>
+                            <div id="photo-newest" class="photo-panel">
+                                <span class="badge bg-success badge-pill position-absolute top-0 start-0 m-2" style="z-index:2;">{% trans "RESOLVED" %}</span>
+                                <img src="{{ issue.completion_image.url }}" class="img-fluid rounded-4" style="height: 320px; width:100%; object-fit:cover;" alt="{% trans 'Completion photo uploaded by officer' %}" loading="lazy">
                             </div>
                         </div>
-                        <p class="small text-muted mb-3"><i class="bi bi-check2-circle me-1"></i>{% trans "Before & After comparison — photo uploaded by the officer on completion." %}</p>
+                        <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1"></i>{% trans "Toggle between the citizen's original report photo and the officer's completion photo." %}</p>
+                        <script>
+                            document.querySelectorAll('.photo-toggle-btn').forEach(function(btn) {
+                                btn.addEventListener('click', function() {
+                                    document.querySelectorAll('.photo-toggle-btn').forEach(function(b) {
+                                        b.classList.remove('btn-gov-primary', 'active');
+                                        b.classList.add('btn-outline-secondary');
+                                    });
+                                    btn.classList.remove('btn-outline-secondary');
+                                    btn.classList.add('btn-gov-primary', 'active');
+                                    document.querySelectorAll('.photo-panel').forEach(function(p) { p.classList.add('d-none'); });
+                                    document.getElementById(btn.getAttribute('data-target')).classList.remove('d-none');
+                                });
+                            });
+                        </script>
                     {% elif issue.image %}
                         <img src="{{ issue.image.url }}" class="img-fluid rounded-4 mb-3" style="max-height: 350px; width:100%; object-fit:cover;" alt="{{ issue.title }}" loading="lazy">
                     {% endif %}

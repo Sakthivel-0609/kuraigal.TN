@@ -52,3 +52,9 @@ services:
         value: koraigaltn@gmail.com
       - key: DJANGO_EMAIL_PASSWORD
         sync: false
+      - key: DJANGO_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: DJANGO_CLOUDINARY_API_KEY
+        sync: false
+      - key: DJANGO_CLOUDINARY_API_SECRET
+        sync: false

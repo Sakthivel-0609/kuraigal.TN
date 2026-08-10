@@ -907,9 +907,32 @@ def _build_issue_pdf_bytes(request, issue):
         SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
     )
     from reportlab.lib.utils import ImageReader
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     import io
     import os
     from django.conf import settings
+
+    # Register a Tamil-capable font (bundled GNU FreeFont) so Tamil text in
+    # descriptions/addresses renders correctly instead of as blank boxes -
+    # Helvetica (the reportlab default) has no Tamil glyphs at all.
+    FONT_REGULAR = 'Helvetica'
+    FONT_BOLD = 'Helvetica-Bold'
+    try:
+        if 'FreeSans' not in pdfmetrics.getRegisteredFontNames():
+            regular_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'FreeSans.ttf')
+            bold_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'FreeSansBold.ttf')
+            if os.path.exists(regular_path):
+                pdfmetrics.registerFont(TTFont('FreeSans', regular_path))
+                FONT_REGULAR = 'FreeSans'
+            if os.path.exists(bold_path):
+                pdfmetrics.registerFont(TTFont('FreeSans-Bold', bold_path))
+                FONT_BOLD = 'FreeSans-Bold'
+        else:
+            FONT_REGULAR = 'FreeSans'
+            FONT_BOLD = 'FreeSans-Bold'
+    except Exception:
+        pass  # falls back to Helvetica (English-only) if the font files are missing
 
     NAVY = colors.HexColor('#0B2545')
     GOLD = colors.HexColor('#B8860B')
@@ -917,21 +940,21 @@ def _build_issue_pdf_bytes(request, issue):
     GRAY = colors.HexColor('#5C6B7A')
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='GovHeaderTitle', fontName='Helvetica-Bold', fontSize=13,
+    styles.add(ParagraphStyle(name='GovHeaderTitle', fontName=FONT_BOLD, fontSize=13,
                                textColor=NAVY, alignment=TA_CENTER, leading=16))
-    styles.add(ParagraphStyle(name='GovHeaderSub', fontName='Helvetica', fontSize=9.5,
+    styles.add(ParagraphStyle(name='GovHeaderSub', fontName=FONT_REGULAR, fontSize=9.5,
                                textColor=GRAY, alignment=TA_CENTER, leading=12))
-    styles.add(ParagraphStyle(name='DocTitle', fontName='Helvetica-Bold', fontSize=12,
+    styles.add(ParagraphStyle(name='DocTitle', fontName=FONT_BOLD, fontSize=12,
                                textColor=colors.white, alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name='FieldLabel', fontName='Helvetica-Bold', fontSize=8.5,
+    styles.add(ParagraphStyle(name='FieldLabel', fontName=FONT_BOLD, fontSize=8.5,
                                textColor=GRAY, leading=11))
-    styles.add(ParagraphStyle(name='FieldValue', fontName='Helvetica', fontSize=9.5,
+    styles.add(ParagraphStyle(name='FieldValue', fontName=FONT_REGULAR, fontSize=9.5,
                                textColor=colors.HexColor('#1a1a1a'), leading=12.5))
-    styles.add(ParagraphStyle(name='SectionHeading', fontName='Helvetica-Bold', fontSize=10.5,
+    styles.add(ParagraphStyle(name='SectionHeading', fontName=FONT_BOLD, fontSize=10.5,
                                textColor=NAVY, leading=13, spaceBefore=8, spaceAfter=4))
-    styles.add(ParagraphStyle(name='BodyText9', fontName='Helvetica', fontSize=9.5,
+    styles.add(ParagraphStyle(name='BodyText9', fontName=FONT_REGULAR, fontSize=9.5,
                                textColor=colors.HexColor('#1a1a1a'), leading=13.5))
-    styles.add(ParagraphStyle(name='Disclaimer', fontName='Helvetica-Oblique', fontSize=7.5,
+    styles.add(ParagraphStyle(name='Disclaimer', fontName=FONT_REGULAR, fontSize=7.5,
                                textColor=GRAY, alignment=TA_CENTER, leading=10))
 
     story = []
@@ -968,9 +991,9 @@ def _build_issue_pdf_bytes(request, issue):
     # -------------------------------------------------- tracking number box
     tracking_box = Table(
         [[Paragraph("COMPLAINT / TRACKING NUMBER", ParagraphStyle(
-            'tnlabel', fontName='Helvetica-Bold', fontSize=8.5, textColor=GOLD, alignment=TA_CENTER))],
+            'tnlabel', fontName=FONT_BOLD, fontSize=8.5, textColor=GOLD, alignment=TA_CENTER))],
          [Paragraph(issue.tracking_number, ParagraphStyle(
-             'tnvalue', fontName='Helvetica-Bold', fontSize=20, textColor=NAVY, alignment=TA_CENTER))]],
+             'tnvalue', fontName=FONT_BOLD, fontSize=20, textColor=NAVY, alignment=TA_CENTER))]],
         colWidths=[17 * cm],
         style=TableStyle([
             ('BOX', (0, 0), (-1, -1), 1.2, GOLD),
