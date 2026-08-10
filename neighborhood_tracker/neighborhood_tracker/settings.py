@@ -157,6 +157,12 @@ else:
         },
     }
 
+# WhiteNoise's manifest storage is strict by default and raises a build-breaking
+# error if any CSS file references an asset that isn't found (a known quirk with
+# some Django admin static files). Setting this False makes it skip such
+# references gracefully instead of failing the whole deploy.
+WHITENOISE_MANIFEST_STRICT = False
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ---------------------------------------------------------------------------
